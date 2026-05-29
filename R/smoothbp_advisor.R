@@ -18,13 +18,35 @@
 #'
 #' \itemize{
 #'   \item `prior_frac` \eqn{\to 1}: prior dominates — group changepoints are
-#'     poorly identified from data.  **Recommend non-centred** reparameterisation
-#'     (sample `omega_k_g_tilde ~ N(0,1)`, reconstruct
-#'     `omega_k_g = omega_k_g_tilde * sigma_re_omega_k`).
+#'     poorly identified from data relative to the shrinkage prior.  The sampler
+#'     is in the funnel regime and non-centred reparameterisation would help.
 #'   \item `prior_frac` \eqn{\to 0}: likelihood dominates — centred
-#'     parameterisation is efficient.
+#'     parameterisation is efficient and mixing should be adequate.
 #'   \item Mixed: flag individual groups for attention.
 #' }
+#'
+#' **What to do with the results (current smoothbp limitations):**
+#'
+#' `smoothbp` v0.2.1 does not expose a non-centred option for omega random
+#' effects — the Rust sampler always uses the centred form
+#' `u_omega ~ N(0, sigma_re_omega^2)`.  Until non-centred support is added,
+#' the practical options when `prior_frac` is high are:
+#'
+#' \enumerate{
+#'   \item **Increase warmup and iterations** (`iter`, `warmup` arguments).
+#'     The sampler will eventually mix, just slowly.
+#'   \item **Check `fit$n_divergent`**.  Many divergences confirm the funnel
+#'     is causing problems; zero divergences mean the sampler is coping.
+#'   \item **Fix the changepoint for high-prior_frac groups** using
+#'     `omega = list(fixed(value))` for those groups, if domain knowledge
+#'     supports it.  This removes the RE for those groups entirely.
+#'   \item **Reduce the number of breakpoints** with spike-and-slab
+#'     (`smoothbp_ss`).  If `prior_frac` is high for all groups at a given
+#'     breakpoint, the data may not support that many changepoints.
+#' }
+#'
+#' The `prior_frac` values quantify the severity: values above 0.8 indicate a
+#' serious funnel; 0.6–0.8 suggests moderate difficulty worth addressing.
 #'
 #' The gradient is computed analytically from the sigmoid smooth-transition
 #' likelihood:
@@ -201,14 +223,24 @@ print.fibr_smoothbp_advice <- function(x, digits = 3L, ...) {
 
     print(df, row.names = FALSE)
 
-    overall <- if (all(bp$recommendation == "non-centred")) {
-      "Reparameterise ALL omega RE to non-centred."
-    } else if (all(bp$recommendation == "centred (OK)")) {
-      "Centred parameterisation is efficient."
+    n_nc  <- sum(bp$recommendation == "non-centred")
+    n_ok  <- sum(bp$recommendation == "centred (OK)")
+    n_tot <- length(bp$recommendation)
+
+    if (n_ok == n_tot) {
+      cat("\nSampling geometry OK — centred parameterisation is efficient.\n\n")
     } else {
-      "Mixed: see group-level recommendations above."
+      severity <- if (n_nc == n_tot) "all groups" else
+                  sprintf("%d of %d groups", n_nc, n_tot)
+      cat(sprintf(
+        "\nFunnel geometry detected in %s at breakpoint %d.\n", severity, k))
+      cat("smoothbp does not yet support non-centred omega RE directly.\n")
+      cat("Options (in order of effort):\n")
+      cat("  1. Increase warmup/iter — the sampler will mix, just slowly.\n")
+      cat("  2. Check fit$n_divergent — many divergences confirm the issue.\n")
+      cat("  3. Fix changepoints for flagged groups: omega = list(fixed(value)).\n")
+      cat("  4. Use smoothbp_ss() to let the model select fewer breakpoints.\n\n")
     }
-    cat(sprintf("\nAdvice: %s\n\n", overall))
   }
 
   invisible(x)
