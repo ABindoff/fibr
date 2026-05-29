@@ -1,0 +1,6 @@
+r_files <- list.files("R", pattern = "\\.R$", full.names = TRUE)
+invisible(lapply(r_files, source))
+library(posterior)
+library(FNN)
+library(testthat)
+test_dir("tests/testthat", reporter = "progress")
