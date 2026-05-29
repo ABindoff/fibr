@@ -21,4 +21,8 @@ Rplots.pdf
 # Claude Code
 .claude/
 
+# Vignette build artefacts
+vignettes/*.html
+vignettes/*.md
+
 .repro/
