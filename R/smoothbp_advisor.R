@@ -25,24 +25,27 @@
 #'   \item Mixed: flag individual groups for attention.
 #' }
 #'
-#' **What to do with the results (current smoothbp limitations):**
+#' **What to do with the results:**
 #'
-#' `smoothbp` v0.2.1 does not expose a non-centred option for omega random
-#' effects — the Rust sampler always uses the centred form
-#' `u_omega ~ N(0, sigma_re_omega^2)`.  Until non-centred support is added,
-#' the practical options when `prior_frac` is high are:
+#' When `prior_frac` is high, re-fit with `reparameterise = "omega"`:
 #'
+#' ```r
+#' fit_nc <- smoothbp(..., reparameterise = "omega")
+#' fit_nc_ss <- smoothbp_ss(..., reparameterise = "omega")
+#' ```
+#'
+#' This activates the non-centred HMC parameterisation in the Rust sampler:
+#' `z[j] = beta_om[j] / sigma_re_om[k]` is sampled with an `N(0,1)` prior,
+#' and `beta_om[j] = z[j] * sigma_re_om[k]` is reconstructed automatically.
+#' The `sigma_re_om` Gibbs step and the stored draws are unchanged — output
+#' is in the original (centred) parameterisation for easy interpretation.
+#'
+#' Additional options if `reparameterise = "omega"` is insufficient:
 #' \enumerate{
-#'   \item **Increase warmup and iterations** (`iter`, `warmup` arguments).
-#'     The sampler will eventually mix, just slowly.
-#'   \item **Check `fit$n_divergent`**.  Many divergences confirm the funnel
-#'     is causing problems; zero divergences mean the sampler is coping.
-#'   \item **Fix the changepoint for high-prior_frac groups** using
-#'     `omega = list(fixed(value))` for those groups, if domain knowledge
-#'     supports it.  This removes the RE for those groups entirely.
-#'   \item **Reduce the number of breakpoints** with spike-and-slab
-#'     (`smoothbp_ss`).  If `prior_frac` is high for all groups at a given
-#'     breakpoint, the data may not support that many changepoints.
+#'   \item Increase `warmup` and `iter`.
+#'   \item Check `fit$n_divergent` — many divergences confirm a remaining funnel.
+#'   \item Fix the changepoint for poorly-identified groups using
+#'     `omega = list(fixed(value))`.
 #' }
 #'
 #' The `prior_frac` values quantify the severity: values above 0.8 indicate a
@@ -234,12 +237,12 @@ print.fibr_smoothbp_advice <- function(x, digits = 3L, ...) {
                   sprintf("%d of %d groups", n_nc, n_tot)
       cat(sprintf(
         "\nFunnel geometry detected in %s at breakpoint %d.\n", severity, k))
-      cat("smoothbp does not yet support non-centred omega RE directly.\n")
-      cat("Options (in order of effort):\n")
-      cat("  1. Increase warmup/iter — the sampler will mix, just slowly.\n")
-      cat("  2. Check fit$n_divergent — many divergences confirm the issue.\n")
-      cat("  3. Fix changepoints for flagged groups: omega = list(fixed(value)).\n")
-      cat("  4. Use smoothbp_ss() to let the model select fewer breakpoints.\n\n")
+      cat("Options (in order of impact):\n")
+      cat("  1. Re-fit with reparameterise = \"omega\" (non-centred HMC for omega RE):\n")
+      cat("       smoothbp(..., reparameterise = \"omega\")\n")
+      cat("  2. Increase warmup/iter if reparameterising does not fully resolve it.\n")
+      cat("  3. Check fit$n_divergent to confirm severity.\n")
+      cat("  4. Fix changepoints for badly-identified groups: omega = list(fixed(value)).\n\n")
     }
   }
 
