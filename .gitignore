@@ -1,0 +1,22 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.positai
+
+# Generated simulation outputs
+data-raw/*.rds
+data-raw/*.png
+
+# Compiled Stan models
+inst/stan/*.exe
+inst/stan/*.hpp
+
+# R build artefacts
+Rplots.pdf
+/*.tar.gz
+/src/*.o
+/src/*.so
+
+# Claude Code
+.claude/

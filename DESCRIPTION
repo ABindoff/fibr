@@ -1,0 +1,33 @@
+Package: fibr
+Type: Package
+Title: Holonomy Diagnostics for Hierarchical MCMC
+Version: 0.0.0.9000
+Authors@R:
+    person("First", "Last", email = "abdogbehaviour@gmail.com",
+           role = c("aut", "cre"))
+Description: Detects non-trivial holonomy in Markov chain Monte Carlo chains
+    from hierarchical models by exploiting the fiber bundle structure of the
+    joint parameter space. The Fisher information metric on the total space
+    induces a connection whose curvature produces a rotation of local
+    (fiber) parameters when global (base space) hyperparameters traverse closed
+    loops. This geometric obstruction to mixing is invisible to standard
+    diagnostics such as R-hat, effective sample size, and divergence counts.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: false
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends:
+    R (>= 4.1.0)
+Imports:
+    posterior (>= 1.4.0),
+    Matrix,
+    ggplot2,
+    FNN
+Suggests:
+    cmdstanr,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr
