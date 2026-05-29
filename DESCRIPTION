@@ -3,8 +3,10 @@ Type: Package
 Title: Holonomy Diagnostics for Hierarchical MCMC
 Version: 0.0.0.9000
 Authors@R:
-    person("First", "Last", email = "abdogbehaviour@gmail.com",
-           role = c("aut", "cre"))
+    person("Aidan D", "Bindoff",
+           email   = "aidan.bindoff@utas.edu.au",
+           role    = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-0943-2702"))
 Description: Detects non-trivial holonomy in Markov chain Monte Carlo chains
     from hierarchical models by exploiting the fiber bundle structure of the
     joint parameter space. The Fisher information metric on the total space
