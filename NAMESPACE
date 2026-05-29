@@ -2,6 +2,9 @@
 # Run devtools::document() to regenerate from roxygen tags.
 
 export(holonomy_diagnostic)
+export(smoothbp_advisor)
+S3method(print, fibr_smoothbp_advice)
+S3method(plot,  fibr_smoothbp_advice)
 export(compute_connection)
 export(horizontal_mcmc)
 export(riemannian_mcmc)
