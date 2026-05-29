@@ -2,8 +2,15 @@
 # Run devtools::document() to regenerate from roxygen tags.
 
 export(holonomy_diagnostic)
-S3method(plot, fibr_holonomy)
+export(compute_connection)
+export(integrate_transport)
+export(synthetic_holonomy_loop)
+S3method(plot,  fibr_holonomy)
 S3method(print, fibr_holonomy)
+S3method(plot,  fibr_connection)
+S3method(print, fibr_connection)
+S3method(plot,  fibr_transport)
+S3method(print, fibr_transport)
 importFrom(FNN, get.knnx)
 importFrom(posterior, as_draws_matrix)
 importFrom(posterior, variables)

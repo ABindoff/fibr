@@ -26,6 +26,8 @@ Imports:
     FNN
 Suggests:
     cmdstanr,
+    deSolve,
+    patchwork,
     testthat (>= 3.0.0),
     knitr,
     rmarkdown
