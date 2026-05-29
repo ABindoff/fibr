@@ -3,6 +3,7 @@
 
 export(holonomy_diagnostic)
 export(compute_connection)
+export(horizontal_mcmc)
 export(integrate_transport)
 export(synthetic_holonomy_loop)
 S3method(plot,  fibr_holonomy)
