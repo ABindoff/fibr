@@ -24,8 +24,12 @@
 #' @param n_chains  Number of independent chains (default 4).
 #' @param L         Leapfrog steps per trajectory (default 10).
 #' @param epsilon   Initial step size (default 0.1). Adapted during warmup.
+#' @param method     Metric to use: `"diagonal"` (default, always PD, fast) or
+#'   `"softabs"` (SoftAbs regularised full metric; captures off-diagonal coupling).
+#' @param softabs_alpha  SoftAbs smoothness parameter alpha (default 1).
+#'   Larger values give a sharper approximation to the absolute-value metric.
 #' @param target_rate Target Metropolis acceptance rate for adaptive tuning
-#'   (default 0.65, the RMHMC optimal rate for many-step trajectories).
+#'   (default 0.65). For `L = 1` (MALA) use 0.57.
 #' @param init      Optional named list: `mu`, `sigma`, `alpha`, `beta`.
 #'   Defaults to prior draws.
 #' @param seed      Random seed.
@@ -36,15 +40,19 @@
 #'
 #' @export
 riemannian_mcmc <- function(stan_data,
-                             n_iter      = 2000L,
-                             n_warmup    = 1000L,
-                             n_chains    = 4L,
-                             L           = 10L,
-                             epsilon     = 0.10,
-                             target_rate = 0.65,
-                             init        = NULL,
-                             seed        = NULL,
-                             verbose     = TRUE) {
+                             n_iter        = 2000L,
+                             n_warmup      = 1000L,
+                             n_chains      = 4L,
+                             L             = 10L,
+                             epsilon       = 0.10,
+                             method        = c("diagonal", "softabs"),
+                             softabs_alpha = 1.0,
+                             target_rate   = 0.65,
+                             init          = NULL,
+                             seed          = NULL,
+                             verbose       = TRUE) {
+
+  method <- match.arg(method)
 
   if (!is.null(seed)) set.seed(seed)
 
@@ -93,30 +101,63 @@ riemannian_mcmc <- function(stan_data,
 
       pars <- .unpack(q_c, J)
 
-      # 1. Diagonal Fisher metric at current position (always PD)
-      #    G_diag[k] = -∂²/∂qk² log p(q|y) > 0 for all k
-      G_d <- tryCatch(
-        .glmm_diag_metric(pars$mu, pars$log_sigma,
-                          pars$alpha, pars$beta, stan_data),
-        error = function(e) NULL
-      )
-      if (is.null(G_d) || !all(is.finite(G_d)) || any(G_d <= 0)) next
+      # 1. Compute metric at current position
+      #    "diagonal": diagonal G, always PD, O(N+J) per call
+      #    "softabs" : full SoftAbs G, always PD, captures off-diagonal coupling
+      metric <- tryCatch({
+        if (method == "diagonal") {
+          G_d <- .glmm_diag_metric(pars$mu, pars$log_sigma,
+                                   pars$alpha, pars$beta, stan_data)
+          if (any(G_d <= 0) || !all(is.finite(G_d))) stop("bad diag")
+          list(type = "diagonal", G_d = G_d)
+        } else {
+          blocks <- .glmm_full_metric(pars$mu, pars$log_sigma,
+                                      pars$alpha, pars$beta, stan_data)
+          sa     <- .softabs_decomp(blocks, J, softabs_alpha)
+          if (!all(is.finite(sa$lambda_sa)) || any(sa$lambda_sa <= 0)) stop("bad sa")
+          list(type = "softabs", U = sa$U, lsa = sa$lambda_sa)
+        }
+      }, error = function(e) NULL)
+      if (is.null(metric)) next
 
-      # 2. Sample momentum p₀ ~ N(0, G_d)  component-wise
-      p0 <- rnorm(P, 0, sqrt(G_d))
+      # 2. Sample momentum  p₀ ~ N(0, G)
+      #    diagonal: component-wise  softabs: p = U (sqrt(λ_sa) ⊙ z)
+      p0 <- if (metric$type == "diagonal") {
+        rnorm(P, 0, sqrt(metric$G_d))
+      } else {
+        as.vector(metric$U %*% (sqrt(metric$lsa) * rnorm(P)))
+      }
 
-      # 3. Hamiltonian at start  H = U(q) + K(p)
-      #    K = 0.5 * sum(p² / G_d)  (diagonal kinetic energy, FIXED G_d)
+      # Helper: kinetic energy K = 0.5 p^T G^{-1} p  (same G throughout)
+      .K <- function(p) {
+        if (metric$type == "diagonal") {
+          0.5 * sum(p^2 / metric$G_d)
+        } else {
+          v <- as.vector(t(metric$U) %*% p)
+          0.5 * sum(v^2 / metric$lsa)
+        }
+      }
+
+      # Helper: velocity v = G^{-1} p
+      .vel <- function(p) {
+        if (metric$type == "diagonal") {
+          p / metric$G_d
+        } else {
+          v <- as.vector(t(metric$U) %*% p)
+          as.vector(metric$U %*% (v / metric$lsa))
+        }
+      }
+
+      # 3. Hamiltonian at start  H_riem = U(q) + K(p)
       lp_s <- tryCatch(
         .glmm_log_post(pars$mu, pars$log_sigma,
                        pars$alpha, pars$beta, stan_data),
         error = function(e) -Inf
       )
       if (!is.finite(lp_s)) { n_prop <- n_prop + 1L; next }
+      H_s <- -lp_s + .K(p0)
 
-      H_s <- -lp_s + 0.5 * sum(p0^2 / G_d)
-
-      # 4. Leapfrog  (diagonal mass matrix = 1/G_d, FIXED throughout)
+      # 4. Leapfrog (FIXED metric throughout the trajectory)
       q_new <- q_c
       p_new <- p0
       valid <- TRUE
@@ -131,7 +172,7 @@ riemannian_mcmc <- function(stan_data,
         if (is.null(grad_l) || !all(is.finite(grad_l))) { valid <- FALSE; break }
 
         p_half <- p_new + (eps_c / 2) * grad_l
-        q_new  <- q_new + eps_c * p_half / G_d   # G_d^{-1} p (diagonal)
+        q_new  <- q_new + eps_c * .vel(p_half)
 
         pars_l2 <- .unpack(q_new, J)
         grad_l2 <- tryCatch(
@@ -154,9 +195,7 @@ riemannian_mcmc <- function(stan_data,
         )
         if (!is.finite(lp_e)) lp_e <- -Inf
 
-        H_e <- -lp_e + 0.5 * sum(p_new^2 / G_d)   # same G_d as H_s
-
-        log_r <- H_s - H_e
+        log_r <- H_s - (-lp_e + .K(p_new))
         if (is.finite(log_r) && log(runif(1L)) < log_r) {
           q_c   <- q_new
           n_acc <- n_acc + 1L

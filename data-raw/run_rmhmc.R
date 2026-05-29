@@ -58,50 +58,48 @@ cat("Diagonal metric used for RMHMC: always PD, captures key adaptation.\n\n")
 
 # ── 2. RMHMC chains ───────────────────────────────────────────────────────────
 
-cat("\n── 2. RMHMC sampler ─────────────────────────────────────────────────────\n")
+cat("\n── 2. RMHMC samplers ────────────────────────────────────────────────────\n")
 
-# Initialise near the Stan posterior mean to focus on mixing, not burn-in
-summ_c     <- summarise_draws(draws_c, "mean")
-get_mean   <- function(pat) summ_c$mean[grep(pat, summ_c$variable)]
-init_mean  <- list(
+# Initialise near the Stan posterior mean so we measure mixing, not burn-in
+summ_c   <- summarise_draws(draws_c, "mean")
+get_mean <- function(pat) summ_c$mean[grep(pat, summ_c$variable)]
+init_pm  <- list(
   mu    = get_mean("^mu$"),
   sigma = get_mean("^sigma$"),
   alpha = get_mean("^alpha\\["),
   beta  = get_mean("^beta\\[")
 )
-# Jitter four chains slightly around the posterior mean
-set.seed(42L)
-inits <- lapply(seq_len(4L), function(i) {
-  s <- get_mean("^sigma$")
-  list(mu    = init_mean$mu    + rnorm(1, 0, 0.2),
-       sigma = max(0.1, s      + rnorm(1, 0, 0.3)),
-       alpha = init_mean$alpha + rnorm(8, 0, 0.5),
-       beta  = init_mean$beta  + rnorm(2, 0, 0.1))
-})
 
-# L=1 (Riemannian MALA): single leapfrog step per trajectory.
-# More stable than long trajectories with a fixed diagonal metric in a funnel.
-# Target acceptance ~0.57 (MALA optimum).
-draws_rmhmc <- riemannian_mcmc(
+RMHMC_ARGS <- list(
   stan_data   = stan_data,
   n_iter      = 2000L,
   n_warmup    = 2000L,
   n_chains    = 4L,
-  L           = 1L,
+  L           = 1L,        # MALA-style: single step, stable in funnels
   epsilon     = 0.10,
-  target_rate = 0.57,
-  init        = inits[[1L]],
+  target_rate = 0.57,      # MALA optimum
+  init        = init_pm,
   seed        = 42L,
   verbose     = TRUE
 )
 
-cat("\nRMHMC summary:\n")
-rmhmc_summ <- summarise_draws(
-  subset_draws(draws_rmhmc, variable = key_vars), "ess_bulk", "rhat"
-)
-print(rmhmc_summ, n = Inf)
+cat("\n2a. Diagonal metric (per-parameter step sizes, no off-diagonal):\n")
+draws_diag <- do.call(riemannian_mcmc, c(RMHMC_ARGS, list(method = "diagonal")))
 
-saveRDS(draws_rmhmc, file.path(out_dir, "glmm_sparse_rmhmc.rds"))
+cat("\n2b. SoftAbs metric (full metric with off-diagonal coupling, always PD):\n")
+draws_sa <- do.call(riemannian_mcmc, c(RMHMC_ARGS, list(method = "softabs",
+                                                          softabs_alpha = 1.0)))
+
+cat("\nDiagonal RMHMC summary:\n")
+print(summarise_draws(subset_draws(draws_diag, variable = key_vars),
+                      "ess_bulk", "rhat"), n = Inf)
+
+cat("\nSoftAbs RMHMC summary:\n")
+print(summarise_draws(subset_draws(draws_sa, variable = key_vars),
+                      "ess_bulk", "rhat"), n = Inf)
+
+saveRDS(draws_diag, file.path(out_dir, "glmm_sparse_rmhmc_diag.rds"))
+saveRDS(draws_sa,   file.path(out_dir, "glmm_sparse_rmhmc_sa.rds"))
 
 # ── 3. Reload other chains ────────────────────────────────────────────────────
 
@@ -132,14 +130,16 @@ draws_hc <- fit_hc$draws()
 
 nominal <- 4L * 2000L
 df_ess <- rbind(
-  .get_ess(draws_c,     "Centred"),
-  .get_ess(draws_hc,    "H-corrected"),
-  .get_ess(draws_rmhmc, "RMHMC"),
-  .get_ess(draws_nc,    "Non-centred")
+  .get_ess(draws_c,    "Centred"),
+  .get_ess(draws_hc,   "H-corrected"),
+  .get_ess(draws_diag, "RMHMC-diag"),
+  .get_ess(draws_sa,   "RMHMC-SoftAbs"),
+  .get_ess(draws_nc,   "Non-centred")
 )
-df_ess$pct     <- df_ess$ess / nominal * 100
-df_ess$model   <- factor(df_ess$model,
-                          levels=c("Centred","H-corrected","RMHMC","Non-centred"))
+df_ess$pct      <- df_ess$ess / nominal * 100
+df_ess$model    <- factor(df_ess$model,
+                           levels=c("Centred","H-corrected",
+                                    "RMHMC-diag","RMHMC-SoftAbs","Non-centred"))
 df_ess$variable <- factor(df_ess$variable, levels=key_vars)
 
 cat("\nMin ESS_bulk per model:\n")
@@ -152,15 +152,16 @@ p_ess <- ggplot(df_ess, aes(x=variable, y=pct, fill=model)) +
   geom_col(position="dodge", width=0.72) +
   geom_hline(yintercept=100, linetype="dotted", colour="grey40") +
   scale_fill_manual(
-    values=c("Centred"     = "#4682B4",
-             "H-corrected" = "#B22222",
-             "RMHMC"       = "#FF8C00",
-             "Non-centred" = "#2E8B57")
+    values=c("Centred"       = "#4682B4",
+             "H-corrected"   = "#B22222",
+             "RMHMC-diag"    = "#FF8C00",
+             "RMHMC-SoftAbs" = "#9932CC",
+             "Non-centred"   = "#2E8B57")
   ) +
   labs(
-    title="Four-way ESS comparison — sparse GLMM (J=8, n_j=3, sigma_true=3)",
-    subtitle=paste("RMHMC uses per-trajectory Fisher metric G(q);",
-                   "no Stan, pure R leapfrog"),
+    title="Five-way ESS comparison — sparse GLMM (J=8, n_j=3, sigma_true=3)",
+    subtitle=paste("SoftAbs: full G with off-diagonal coupling, always PD;",
+                   "Diagonal: per-parameter scaling only"),
     x=NULL, y="ESS bulk (% of nominal)", fill=NULL
   ) +
   theme_minimal(base_size=12) +

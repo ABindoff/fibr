@@ -43,10 +43,10 @@
   c(G_mu, G_ls, G_alpha, G_beta)
 }
 
-#' Full Fisher metric blocks (for research and validation)
+#' Full Fisher metric blocks (for research and SoftAbs)
 #'
-#' Returns a named list of all metric blocks. NOT guaranteed PD outside the
-#' mode; use `.glmm_diag_metric()` for RMHMC.
+#' Returns the raw metric blocks. NOT guaranteed PD outside the mode; the
+#' SoftAbs metric function below regularises the full assembled matrix.
 #' @keywords internal
 .glmm_full_metric <- function(mu, log_sigma, alpha, beta, stan_data) {
 
@@ -77,6 +77,68 @@
 
   list(G_FF_diag = G_FF_diag, G_BB = G_BB, G_BF = G_BF,
        G_Beta = G_Beta, G_ab = G_ab)
+}
+
+#' Assemble the full P×P G matrix from metric blocks
+#' @keywords internal
+.assemble_G <- function(blocks, J) {
+  P     <- 2L + J + 2L
+  ib    <- 1:2
+  if_   <- 3L:(2L + J)
+  ibeta <- (3L + J):(4L + J)
+
+  G <- matrix(0, P, P)
+  G[ib,    ib]      <- blocks$G_BB
+  G[if_,   if_]     <- diag(blocks$G_FF_diag)
+  G[ibeta, ibeta]   <- blocks$G_Beta
+  G[if_,   ib]      <- blocks$G_BF
+  G[ib,    if_]     <- t(blocks$G_BF)
+  G[if_,   ibeta]   <- blocks$G_ab
+  G[ibeta, if_]     <- t(blocks$G_ab)
+  G
+}
+
+# ── SoftAbs metric (Betancourt 2013) ─────────────────────────────────────────
+
+#' SoftAbs regulariser: smooth strictly-positive approximation to |lambda|
+#'
+#' f(lambda, alpha) = |lambda| / tanh(alpha * |lambda|)
+#'
+#' Properties:
+#'   f(0, alpha)    = 1/alpha    (strictly positive floor)
+#'   f(lambda, inf) = |lambda|   (exact absolute value for large alpha)
+#'
+#' @param lambda  Numeric vector of eigenvalues.
+#' @param alpha   Smoothness parameter (default 1; larger = sharper).
+#' @return Numeric vector, strictly positive.
+#' @keywords internal
+.softabs_eval <- function(lambda, alpha = 1.0) {
+  al <- alpha * abs(lambda)
+  ifelse(al < 1e-8, 1 / alpha, abs(lambda) / tanh(al))
+}
+
+#' SoftAbs metric decomposition
+#'
+#' Computes the SoftAbs Riemannian metric from the full Hessian of the
+#' log-posterior.  The Hessian H = ∇² log p(q|y) is indefinite away from the
+#' posterior mode; SoftAbs maps each eigenvalue lambda_i of H to the strictly
+#' positive value f(lambda_i, alpha), giving a globally PD metric that
+#' recovers the absolute-value metric for |lambda| >> 1/alpha.
+#'
+#' @param blocks  Output of [.glmm_full_metric()].
+#' @param J       Number of fiber (group) parameters.
+#' @param alpha   SoftAbs smoothness (default 1).
+#' @return A list with `U` (eigenvector matrix), `lambda_sa` (SoftAbs
+#'   eigenvalues), and `log_det` (log determinant of the metric).
+#' @keywords internal
+.softabs_decomp <- function(blocks, J, alpha = 1.0) {
+  G <- .assemble_G(blocks, J)
+  H <- -G                                          # Hessian (not neg-Hessian)
+  eig <- eigen(H, symmetric = TRUE)
+  lambda_sa <- .softabs_eval(eig$values, alpha)    # always > 0
+  list(U         = eig$vectors,
+       lambda_sa = lambda_sa,
+       log_det   = sum(log(lambda_sa)))
 }
 
 #' Gradient of the log-posterior as a flat P-vector
