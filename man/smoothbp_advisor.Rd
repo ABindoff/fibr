@@ -23,8 +23,12 @@ smoothbp_advisor(fit, n_draws = 200L, threshold_nc = 0.6, threshold_c = 0.4)
 \value{
 An S3 object of class \code{fibr_smoothbp_advice}.  Contains one list
 element per breakpoint that has omega random effects, each with
-\code{prior_frac_mean}, \code{prior_frac_q05}, \code{prior_frac_q95}, and
-\code{recommendation} (one entry per group).  Print and plot methods included.
+\code{prior_frac_mean}, \code{prior_frac_q05}, \code{prior_frac_q95},
+\code{recommendation}, and \code{delta} (one entry per group).  \code{delta[j]} is the
+recommended per-group NC mixing fraction
+\eqn{\delta_j = \sqrt{\text{prior\_frac}_j}}, which can be passed
+directly to \code{smoothbp()} via \code{re_fraction = as_smoothbp_re_fraction(advice)}.
+Print and plot methods included.
 }
 \description{
 For each random effect on a changepoint location (\code{omega_k_g} = per-group
@@ -85,4 +89,7 @@ likelihood:
 
 where \eqn{d_{ki} = \tau_i - \omega_{k,i}} and
 \eqn{\sigma_{ki} = \text{logistic}(d_{ki}\,\rho_{ki})}.
+}
+\seealso{
+\code{\link[=as_smoothbp_re_fraction]{as_smoothbp_re_fraction()}}
 }
