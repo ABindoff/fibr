@@ -250,6 +250,33 @@ the Stokes theorem is confirmed for small loops.  The `H_numerical` and
 approximation breaks down and the connection becomes position-dependent
 along the trajectory (the full non-linear parallel transport).
 
+### Visualising parallel transport trajectories
+
+To understand what parallel transport actually looks like step-by-step, we can select one of the detected loop pairs from the MCMC chain, numerically integrate the connection form along it, and plot the trajectory.
+
+Using `type = "trajectory"` on the transport object automatically selects the group with the highest holonomy (maximum parallel transport drift) and the group with the lowest holonomy (minimum drift) for contrast.
+
+```{r transport-trajectory, eval = exists("conn"), fig.width = 9, fig.height = 6, fig.cap = "Step-by-step parallel transport trajectory. The left panel shows the MCMC loop in base space. The right panels contrast the parallel transport paths (solid lines, colored by progress) against the actual MCMC chain values (dotted lines). Top right shows a group experiencing high holonomy drift, while bottom right shows a group with sufficient data experiencing almost no drift."}
+# Detect longer loops (min_gap = 80) to force the trajectory to enclose real area in base space,
+# producing a strong, visible parallel-transport drift (holonomy).
+hd_long <- holonomy_diagnostic(
+  chain             = draws_c,
+  base_vars         = base_vars,
+  fiber_vars        = fiber_vars,
+  min_gap           = 80L,
+  n_bootstrap       = 0L,         # no bootstrap needed for loop detection
+  residualize_fiber = FALSE       # operate on raw fiber coordinates
+)
+trans <- integrate_transport(conn, hd_long$loops, draws_c)
+
+# Plot the loop trajectory and fiber drift for contrast
+plot(trans, type = "trajectory", loop_idx = 1L)
+```
+
+In the plot, the left panel shows the hyperparameter loop in base space $(\mu, \sigma)$ from start to end (progress 0% to 100%). The right panels show the parallel transport in fiber space ($\alpha_j$):
+- **Top Right (High Holonomy)**: The group with very little data (where the prior dominates). The parallel-transported path (solid line) ends far from where it started, showing a significant holonomy drift ($\Delta\alpha_j$). The actual MCMC chain trajectory (dotted line) is forced to track this drift.
+- **Bottom Right (Low Holonomy)**: The group with sufficient data (where the likelihood dominates). The connection is very weak, so the fiber experiences almost no holonomy and the trajectory closes cleanly.
+
 ---
 
 ## Milestone 3 — Parameterisation advisor

@@ -15,13 +15,13 @@
 J x 2 matrix.
 }
 \description{
-A = -G_FF^{-1} G_BF^T   \link{J x 2}
+A = -G_FF^{-1} G_BF^T   (J x 2)
 }
 \details{
 The horizontal lift of a base motion dtheta = (dmu, dsigma) is
 dalpha = A \%*\% dtheta.
 
-A\link{j, 1} =  1 / (sigma^2 * G_FF\link{j})
-A\link{j, 2} =  2*(alpha_j - mu) / (sigma^3 * G_FF\link{j})
+A[j, 1] =  1 / (sigma^2 * G_FF[j])
+A[j, 2] =  2*(alpha_j - mu) / (sigma^3 * G_FF[j])
 }
 \keyword{internal}

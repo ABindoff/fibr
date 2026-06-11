@@ -13,7 +13,7 @@
 }
 \value{
 P-vector of diagonal metric entries (P = J + 4), in order
-(G_mu, G_ls, G_alpha\link{1:J}, G_beta\link{1:2}).
+(G_mu, G_ls, G_alpha[1:J], G_beta[1:2]).
 }
 \description{
 Diagonal Fisher metric at one parameter point (always positive definite)

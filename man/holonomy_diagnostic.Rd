@@ -14,6 +14,7 @@ holonomy_diagnostic(
   k = 100L,
   max_loops = 5000L,
   weights = c("distance", "uniform"),
+  structure = c("diagonal", "full"),
   ridge = 1e-06,
   residualize_fiber = TRUE
 )
@@ -42,6 +43,11 @@ columns, e.g. \code{paste0("alpha[", 1:8, "]")}.}
 
 \item{weights}{Loop weighting for the transport regression; \code{"distance"}
 (default) or \code{"uniform"}. See \code{\link[=estimate_transport_map]{estimate_transport_map()}}.}
+
+\item{structure}{Transport map structure; \code{"diagonal"} (default) fits a
+per-group scalar contraction \eqn{h_j} (the correct model class when the
+fiber metric is diagonal, as in the two-level GLMM), \code{"full"} fits an
+unrestricted \eqn{J \times J} matrix.  See \code{\link[=estimate_transport_map]{estimate_transport_map()}}.}
 
 \item{ridge}{Ridge penalty for the transport map Gram matrix (default \code{1e-6}).}
 

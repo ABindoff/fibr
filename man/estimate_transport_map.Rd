@@ -9,7 +9,8 @@ estimate_transport_map(
   loops,
   n_bootstrap = 200L,
   ridge = 1e-06,
-  weights = c("distance", "uniform")
+  weights = c("distance", "uniform"),
+  structure = c("diagonal", "full")
 )
 }
 \arguments{
@@ -29,15 +30,30 @@ numerical stability (default \code{1e-6}).}
 \item{weights}{\code{"distance"} (default) weights loops by
 \eqn{\exp(-d / \bar{d})} so tighter loops contribute more; \code{"uniform"}
 gives equal weight.}
+
+\item{structure}{\code{"diagonal"} (default) estimates a per-group scalar
+transport \eqn{\alpha_{\mathrm{end},j} \approx h_j\,\alpha_{\mathrm{start},j}},
+i.e. \eqn{H = \mathrm{diag}(h_1, \ldots, h_J)}.  This is the correct
+model class whenever the fiber metric block \eqn{G_{FF}} is diagonal and
+the connection decouples across groups (true for the two-level GLMM,
+where parallel transport is per-group contraction and the structure
+group is abelian; genuine rotation is impossible).  \code{"full"} estimates
+an unrestricted \eqn{J \times J} matrix; with few loop pairs this
+manufactures spurious off-diagonal structure and complex eigenvalues,
+so it should be reserved for models with genuinely coupled fibers.}
 }
 \value{
 A list with:
 \describe{
-\item{H}{Estimated \eqn{J \times J} transport matrix.}
-\item{eigenvalues}{Complex eigenvalues of \code{H}, sorted by decreasing modulus.}
+\item{H}{Estimated \eqn{J \times J} transport matrix (diagonal when
+\code{structure = "diagonal"}).}
+\item{eigenvalues}{Eigenvalues of \code{H}, sorted by decreasing modulus.
+Real for \code{structure = "diagonal"} (returned as complex for a stable
+interface); these are the per-group contraction factors \eqn{h_j}.}
 \item{boot_eigenvalues}{Complex matrix [n_bootstrap x J] of bootstrapped eigenvalues.}
 \item{frobenius_dev}{\eqn{\|H - I\|_F}: scalar summary of holonomy magnitude.}
 \item{n_loops}{Number of loop pairs used.}
+\item{structure}{The structure used (\code{"diagonal"} or \code{"full"}).}
 }
 }
 \description{

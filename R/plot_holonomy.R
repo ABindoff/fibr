@@ -9,20 +9,38 @@ print.fibr_holonomy <- function(x, ...) {
   cat(sprintf("  Base space   : %s\n", paste(x$base_vars, collapse = ", ")))
   cat(sprintf("  Fiber dim    : J = %d\n", length(x$fiber_vars)))
   cat(sprintf("  Residualised : %s\n", if (isTRUE(x$residualized)) "yes" else "no"))
+  cat(sprintf("  Structure    : %s\n", x$structure %||% "full"))
   cat(sprintf("  Loop pairs   : %d\n", x$n_loops))
   cat(sprintf("  ||H - I||_F  : %.4f\n\n", x$frobenius_dev))
 
   evals <- x$eigenvalues
-  df <- data.frame(
-    ` ` = seq_along(evals),
-    `|lambda|` = round(Mod(evals),  4),
-    `Arg (deg)` = round(Arg(evals) * 180 / pi, 2),
-    Re           = round(Re(evals), 4),
-    Im           = round(Im(evals), 4),
-    check.names  = FALSE
-  )
-  cat("Eigenvalues of H (sorted by |lambda|):\n")
-  print(df, row.names = FALSE)
+  if (identical(x$structure, "diagonal")) {
+    # Group-aligned per-group contraction factors (real)
+    df <- data.frame(
+      group       = seq_along(evals),
+      h_j         = round(Re(evals), 4),
+      check.names = FALSE
+    )
+    if (!is.null(x$boot_eigenvalues)) {
+      ci <- apply(Re(x$boot_eigenvalues), 2L, quantile,
+                  probs = c(0.05, 0.95), na.rm = TRUE)
+      df$`5%`  <- round(ci[1L, ], 4)
+      df$`95%` <- round(ci[2L, ], 4)
+    }
+    cat("Per-group transport (contraction) factors h_j:\n")
+    print(df, row.names = FALSE)
+  } else {
+    df <- data.frame(
+      ` ` = seq_along(evals),
+      `|lambda|` = round(Mod(evals),  4),
+      `Arg (deg)` = round(Arg(evals) * 180 / pi, 2),
+      Re           = round(Re(evals), 4),
+      Im           = round(Im(evals), 4),
+      check.names  = FALSE
+    )
+    cat("Eigenvalues of H (sorted by |lambda|):\n")
+    print(df, row.names = FALSE)
+  }
 
   if (!is.null(x$boot_eigenvalues)) {
     # Bootstrap 90% CI on ||H_boot - I||_F approximated from eigenvalues
@@ -42,27 +60,74 @@ print.fibr_holonomy <- function(x, ...) {
 #' Plot a fibr_holonomy object
 #'
 #' @description
-#' Two plot types are available:
-#' - `"eigenspectrum"` (default): eigenvalues of \eqn{\hat{H}} in the complex
-#'   plane with the unit circle as reference and bootstrap clouds.
+#' Three plot types are available:
+#' - `"contraction"` (default for diagonal-structure fits): per-group
+#'   transport factors \eqn{h_j} with bootstrap intervals, against group
+#'   index.  Group identity is preserved, so \eqn{h_j} can be compared
+#'   directly with per-group analytic quantities such as the prior fraction
+#'   \eqn{\pi_j} or the integrated transport prediction.
+#' - `"eigenspectrum"` (default for full-structure fits): eigenvalues of
+#'   \eqn{\hat{H}} in the complex plane with the unit circle as reference and
+#'   bootstrap clouds.
 #' - `"base_loops"`: scatter of detected loop pairs (start vs end iteration),
 #'   coloured by base-space distance.
 #'
 #' @param x A `fibr_holonomy` object.
-#' @param type `"eigenspectrum"` or `"base_loops"`.
+#' @param type `"contraction"`, `"eigenspectrum"`, or `"base_loops"`.
+#'   `NULL` (default) chooses based on the fit structure.
 #' @param ... Ignored.
 #'
 #' @return A `ggplot` object (printed invisibly; assign to capture).
 #' @export
-plot.fibr_holonomy <- function(x, type = c("eigenspectrum", "base_loops"), ...) {
-  type <- match.arg(type)
-  p <- if (type == "eigenspectrum") .plot_eigenspectrum(x)
-       else .plot_base_loops(x)
+plot.fibr_holonomy <- function(x, type = NULL, ...) {
+  if (is.null(type)) {
+    type <- if (identical(x$structure, "diagonal")) "contraction"
+            else "eigenspectrum"
+  }
+  type <- match.arg(type, c("contraction", "eigenspectrum", "base_loops"))
+  p <- switch(type,
+    contraction   = .plot_contraction(x),
+    eigenspectrum = .plot_eigenspectrum(x),
+    base_loops    = .plot_base_loops(x)
+  )
   print(p)
   invisible(p)
 }
 
 # ── Internal plot helpers ─────────────────────────────────────────────────────
+
+.plot_contraction <- function(x) {
+  if (!identical(x$structure, "diagonal")) {
+    stop("type = 'contraction' requires a diagonal-structure fit; ",
+         "re-run holonomy_diagnostic() with structure = 'diagonal'.")
+  }
+  J  <- length(x$eigenvalues)
+  df <- data.frame(group = factor(seq_len(J)), h = Re(x$eigenvalues))
+
+  p <- ggplot(df, aes(x = group, y = h))
+
+  if (!is.null(x$boot_eigenvalues)) {
+    ci <- apply(Re(x$boot_eigenvalues), 2L, quantile,
+                probs = c(0.05, 0.95), na.rm = TRUE)
+    df$lo <- ci[1L, ]
+    df$hi <- ci[2L, ]
+    p <- ggplot(df, aes(x = group, y = h)) +
+      geom_errorbar(aes(ymin = lo, ymax = hi),
+                    width = 0.2, colour = "steelblue")
+  }
+
+  p +
+    geom_hline(yintercept = c(0, 1), linetype = "dashed", colour = "grey60") +
+    geom_point(colour = "firebrick", size = 3) +
+    labs(
+      title    = "Per-group transport factors",
+      subtitle = sprintf("h_j with bootstrap 90%% intervals  |  %d loops",
+                         x$n_loops),
+      x        = "Group j",
+      y        = expression(h[j])
+    ) +
+    theme_minimal(base_size = 12)
+}
 
 .plot_eigenspectrum <- function(x) {
   theta  <- seq(0, 2 * pi, length.out = 300)

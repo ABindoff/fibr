@@ -21,6 +21,6 @@
 J-vector (diagonal of G_FF).
 }
 \description{
-G_FF\link{j,j} = 1/sigma^2  +  sum_{i in group_j} p_ij * (1 - p_ij)
+G_FF[j,j] = 1/sigma^2  +  sum_{i in group_j} p_ij * (1 - p_ij)
 }
 \keyword{internal}

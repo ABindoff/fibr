@@ -26,6 +26,10 @@
 #' @param max_loops Maximum loop pairs per chain (default 5000).
 #' @param weights Loop weighting for the transport regression; `"distance"`
 #'   (default) or `"uniform"`. See [estimate_transport_map()].
+#' @param structure Transport map structure; `"diagonal"` (default) fits a
+#'   per-group scalar contraction \eqn{h_j} (the correct model class when the
+#'   fiber metric is diagonal, as in the two-level GLMM), `"full"` fits an
+#'   unrestricted \eqn{J \times J} matrix.  See [estimate_transport_map()].
 #' @param ridge Ridge penalty for the transport map Gram matrix (default `1e-6`).
 #' @param residualize_fiber If `TRUE` (default), fiber draws are residualised
 #'   against the base draws via OLS before transport estimation.  This removes
@@ -57,11 +61,13 @@ holonomy_diagnostic <- function(chain,
                                 k                  = 100L,
                                 max_loops          = 5000L,
                                 weights            = c("distance", "uniform"),
+                                structure          = c("diagonal", "full"),
                                 ridge              = 1e-6,
                                 residualize_fiber  = TRUE) {
 
-  cl      <- match.call()
-  weights <- match.arg(weights)
+  cl        <- match.call()
+  weights   <- match.arg(weights)
+  structure <- match.arg(structure)
 
   # ── Split into per-chain matrices ────────────────────────────────────────────
   chains <- .split_chains(chain)   # list of matrices, one per chain
@@ -122,7 +128,8 @@ holonomy_diagnostic <- function(chain,
   tm <- estimate_transport_map(full_fiber, loops,
                                n_bootstrap = n_bootstrap,
                                ridge       = ridge,
-                               weights     = weights)
+                               weights     = weights,
+                               structure   = structure)
 
   structure(
     list(
@@ -132,6 +139,7 @@ holonomy_diagnostic <- function(chain,
       frobenius_dev    = tm$frobenius_dev,
       n_loops          = tm$n_loops,
       loops            = loops,
+      structure        = tm$structure,
       residualized     = residualize_fiber,
       call             = cl,
       base_vars        = base_vars,

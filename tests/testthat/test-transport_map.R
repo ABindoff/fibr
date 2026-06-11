@@ -25,14 +25,54 @@ test_that("output has correct structure", {
   expect_equal(tm$n_loops, K)
 })
 
-test_that("eigenvalues are sorted by decreasing modulus", {
+test_that("full-structure eigenvalues are sorted by decreasing modulus", {
   set.seed(2L)
   J <- 5L; N <- 200L
   fiber <- matrix(rnorm(N * J), N, J)
   loops <- make_loops(60L, end_offset = 80L)
-  tm    <- estimate_transport_map(fiber, loops, n_bootstrap = 5L)
+  tm    <- estimate_transport_map(fiber, loops, n_bootstrap = 5L,
+                                  structure = "full")
   mods  <- Mod(tm$eigenvalues)
   expect_true(all(diff(mods) <= 1e-10))  # non-increasing
+})
+
+test_that("diagonal structure returns a diagonal H with group-aligned factors", {
+  set.seed(21L)
+  J <- 4L; K <- 300L
+  h_true <- c(0.2, 0.5, 0.8, 1.0)   # heterogeneous per-group contraction
+  alpha  <- matrix(rnorm(K * J), K, J)
+  fiber  <- rbind(alpha,
+                  sweep(alpha, 2L, h_true, "*") +
+                    matrix(rnorm(K * J, 0, 0.01), K, J))
+  loops  <- make_loops(K, start_offset = 0L, end_offset = K)
+  tm     <- estimate_transport_map(fiber, loops, n_bootstrap = 20L,
+                                   weights = "uniform", structure = "diagonal")
+
+  # H is diagonal
+  off_diag <- tm$H; diag(off_diag) <- 0
+  expect_equal(max(abs(off_diag)), 0)
+  expect_identical(tm$structure, "diagonal")
+
+  # Factors recovered in GROUP order (not modulus-sorted)
+  expect_equal(Re(tm$eigenvalues), h_true, tolerance = 0.05)
+  expect_true(all(abs(Im(tm$eigenvalues)) < 1e-12))
+
+  # Bootstrap columns stay aligned to groups
+  boot_means <- colMeans(Re(tm$boot_eigenvalues), na.rm = TRUE)
+  expect_equal(boot_means, h_true, tolerance = 0.1)
+})
+
+test_that("diagonal estimator matches full estimator when truth is diagonal", {
+  set.seed(22L)
+  J <- 3L; K <- 500L
+  alpha <- matrix(rnorm(K * J), K, J)
+  fiber <- rbind(alpha, 0.6 * alpha + matrix(rnorm(K * J, 0, 0.01), K, J))
+  loops <- make_loops(K, start_offset = 0L, end_offset = K)
+  tm_d  <- estimate_transport_map(fiber, loops, n_bootstrap = 0L,
+                                  weights = "uniform", structure = "diagonal")
+  tm_f  <- estimate_transport_map(fiber, loops, n_bootstrap = 0L,
+                                  weights = "uniform", structure = "full")
+  expect_lt(norm(tm_d$H - tm_f$H, "F"), 0.1)
 })
 
 test_that("identity transform gives H near I", {

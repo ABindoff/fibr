@@ -11,10 +11,22 @@
 #' Currently supports `method = "analytic_glmm"` for the centred two-level
 #' logistic GLMM specified in `inst/stan/glmm_centred.stan`.
 #'
+#' @section Coordinate convention:
+#' All analytic formulas (connection, curvature, prior fraction) are derived
+#' with base coordinates \eqn{(\mu, \sigma)} --- **not** \eqn{(\mu, \log\sigma)}.
+#' The `sigma` column of `chain` must therefore contain \eqn{\sigma} on its
+#' natural (positive) scale, as Stan reports it.  If your chain stores
+#' \eqn{\log\sigma} (as the internal samplers in this package do), transform
+#' it back with `exp()` before calling this function.  Feeding
+#' \eqn{\log\sigma} draws silently produces wrong connection and curvature
+#' values: the two parameterisations differ by a chain-rule factor of
+#' \eqn{\sigma} in the \eqn{\sigma}-column of \eqn{A} and \eqn{G_{BF}}.
+#'
 #' @param chain A [`posterior::draws_array`] or named matrix (rows =
 #'   iterations, columns = parameters).
 #' @param base_vars Character vector of base-space (hyperparameter) column
-#'   names; must be `c("mu", "sigma")` for `method = "analytic_glmm"`.
+#'   names; must be `c("mu", "sigma")` for `method = "analytic_glmm"`, with
+#'   `sigma` on the natural scale (see *Coordinate convention*).
 #' @param fiber_vars Character vector of fiber column names, e.g.
 #'   `paste0("alpha[", 1:8, "]")`.
 #' @param method `"analytic_glmm"` (default and currently only option).
@@ -51,6 +63,18 @@ compute_connection <- function(chain,
   .check_vars(full_mat, base_vars,  "base_vars")
   .check_vars(full_mat, fiber_vars, "fiber_vars")
   .check_vars(full_mat, beta_vars,  "beta_vars")
+
+  # Guard against log-sigma chains: the analytic formulas require sigma on
+  # the natural scale. Negative draws indicate a log-scale column.
+  if (method == "analytic_glmm" &&
+      any(full_mat[, base_vars[2L]] <= 0)) {
+    stop(sprintf(
+      paste0("Column '%s' contains non-positive values; the analytic GLMM ",
+             "connection requires sigma on the natural scale. If your chain ",
+             "stores log(sigma), exp() it first."),
+      base_vars[2L]
+    ))
+  }
 
   n_total <- nrow(full_mat)
   n_sub   <- min(n_subsample, n_total)

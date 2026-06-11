@@ -19,7 +19,8 @@ compute_connection(
 iterations, columns = parameters).}
 
 \item{base_vars}{Character vector of base-space (hyperparameter) column
-names; must be \code{c("mu", "sigma")} for \code{method = "analytic_glmm"}.}
+names; must be \code{c("mu", "sigma")} for \code{method = "analytic_glmm"}, with
+\code{sigma} on the natural scale (see \emph{Coordinate convention}).}
 
 \item{fiber_vars}{Character vector of fiber column names, e.g.
 \code{paste0("alpha[", 1:8, "]")}.}
@@ -52,3 +53,16 @@ must move by \eqn{A(t)\,d\theta} to stay horizontal.
 Currently supports \code{method = "analytic_glmm"} for the centred two-level
 logistic GLMM specified in \code{inst/stan/glmm_centred.stan}.
 }
+\section{Coordinate convention}{
+
+All analytic formulas (connection, curvature, prior fraction) are derived
+with base coordinates \eqn{(\mu, \sigma)} --- \strong{not} \eqn{(\mu, \log\sigma)}.
+The \code{sigma} column of \code{chain} must therefore contain \eqn{\sigma} on its
+natural (positive) scale, as Stan reports it.  If your chain stores
+\eqn{\log\sigma} (as the internal samplers in this package do), transform
+it back with \code{exp()} before calling this function.  Feeding
+\eqn{\log\sigma} draws silently produces wrong connection and curvature
+values: the two parameterisations differ by a chain-rule factor of
+\eqn{\sigma} in the \eqn{\sigma}-column of \eqn{A} and \eqn{G_{BF}}.
+}
+

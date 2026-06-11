@@ -8,7 +8,7 @@
 }
 \value{
 Numeric vector of length P, in order
-(grad_mu, grad_log_sigma, grad_alpha\link{1:J}, grad_beta\link{1:2}).
+(grad_mu, grad_log_sigma, grad_alpha[1:J], grad_beta[1:2]).
 }
 \description{
 Gradient of the log-posterior as a flat P-vector

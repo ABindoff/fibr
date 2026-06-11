@@ -2,7 +2,7 @@
 % Please edit documentation in R/horizontal_sampler.R
 \name{horizontal_mcmc}
 \alias{horizontal_mcmc}
-\title{Connection-corrected Gibbs sampler for the centred GLMM}
+\title{Block Metropolis-within-Gibbs sampler for the centred GLMM}
 \usage{
 horizontal_mcmc(
   stan_data,
@@ -10,7 +10,8 @@ horizontal_mcmc(
   n_warmup = 1000L,
   n_chains = 4L,
   init = NULL,
-  use_correction = TRUE,
+  transport = c("conditional", "fisher_legacy", "none"),
+  use_correction = NULL,
   step_base = 0.1,
   step_alpha = 0.3,
   step_beta = 0.15,
@@ -31,12 +32,15 @@ horizontal_mcmc(
 \item{init}{Optional named list of starting values
 (\code{mu}, \code{sigma}, \code{alpha}, \code{beta}).  Defaults to prior draws.}
 
-\item{use_correction}{Logical; apply horizontal transport correction when
-proposing base moves (default \code{TRUE}).  Set \code{FALSE} for the uncorrected
-baseline.}
+\item{transport}{Character; transport strategy for the base block.
+One of \code{"conditional"} (default, exact), \code{"fisher_legacy"} (biased,
+for comparison), or \code{"none"} (plain MwG).}
 
-\item{step_base}{Initial random-walk SD for the base block
-\eqn{(\mu, \log\sigma)} (default 0.1).}
+\item{use_correction}{Deprecated.  If non-\code{NULL}, overrides \code{transport}:
+\code{TRUE} maps to \code{"fisher_legacy"}, \code{FALSE} to \code{"none"}.}
+
+\item{step_base}{Initial random-walk SD for \eqn{(\mu, \log\sigma)}
+(default 0.1).}
 
 \item{step_alpha}{Initial random-walk SD for each \eqn{\alpha_j}
 (default 0.3).}
@@ -57,26 +61,28 @@ variable naming as the centred Stan model: \code{mu}, \code{sigma}, \code{alpha[
 ..., \code{alpha[J]}, \code{beta[1]}, \code{beta[2]}.
 }
 \description{
-A block Metropolis-within-Gibbs sampler for the centred two-level logistic
-GLMM that incorporates the \strong{horizontal transport correction}: whenever the
-base parameters \eqn{(\mu, \sigma)} are proposed to move, the fiber
-parameters \eqn{\alpha} are pre-displaced along the Fisher metric connection
-before the accept/reject step.
+A block MwG sampler for the centred two-level logistic GLMM.  The
+\strong{base block} proposes a random walk on \eqn{(\mu, \log\sigma)} and
+simultaneously transports the fiber \eqn{\alpha} to the new base point;
+the transport strategy is controlled by \code{transport}.
 
-Without the correction the base and fiber proposals are misaligned: moving
-\eqn{(\mu, \sigma)} while holding \eqn{\alpha} fixed moves the joint state
-"off the horizontal slice," leading to low acceptance and slow mixing in
-\eqn{\alpha}.  The correction pre-aligns \eqn{\alpha} with the new base
-position, dramatically increasing the effective step size in the base
-direction.
+\strong{Conditional transport} (\code{transport = "conditional"}, default): transport
+uses the per-group Laplace affine map
+\eqn{T(\alpha)_j = m_j' + (s_j'/s_j)(\alpha_j - m_j)}, which is exactly
+invertible, so the acceptance ratio is
+\eqn{\log r = \ell(\theta', \alpha') - \ell(\theta, \alpha) +
+\sum_j \log(s_j'/s_j)}.  No clamp is needed; the map is well-behaved as
+\eqn{\sigma \to 0}.
 
-Update schedule (per iteration):
-\enumerate{
-\item \strong{Base block}: propose \eqn{(\mu, \log\sigma)} jointly via random walk;
-if \code{use_correction = TRUE}, displace \eqn{\alpha} by
-\eqn{A(\theta, \alpha)\,\Delta\theta}; accept/reject jointly.
-\item \strong{Fiber block}: propose each \eqn{\alpha_j} independently via random
-walk; accept/reject individually.
-\item \strong{Fixed-effects block}: propose \eqn{\beta} jointly; accept/reject.
-}
+\strong{Fisher legacy} (\code{transport = "fisher_legacy"}): the old Fisher-metric
+Euler lift with a 3-sigma clamp and no Jacobian correction.  Reproduces
+the biased behaviour of the original sampler bit-for-bit.  Keep for SBC
+failure figures.
+
+\strong{None} (\code{transport = "none"}): plain MwG base block; \eqn{\alpha} is not
+pre-displaced.
+
+Update schedule: (1) base block, (2) fiber block (per-\eqn{j} RW),
+(3) fixed-effects block (\eqn{\beta} RW).  The beta block changes
+\eqn{m_j, s_j} but transport is only used inside the base block.
 }

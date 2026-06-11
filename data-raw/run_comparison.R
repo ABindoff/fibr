@@ -1,12 +1,18 @@
 ## Centred vs non-centred holonomy comparison on the sparse GLMM.
 ##
-## Fits the non-centred model to the existing sparse data, runs the holonomy
-## diagnostic on both chains at min_gap=3 (inside the autocorrelation time),
-## and produces a side-by-side eigenspectrum plot.
+## Runs the diagonal holonomy diagnostic at gaps {3,10,25,50} for both
+## the centred and non-centred parameterisations and produces a two-facet
+## gap-profile figure with per-group h_j lines and bootstrap 90% ribbons.
 ##
-## Run from package root: Rscript data-raw/run_comparison.R
+## Non-centred draws are loaded from cache (glmm_sparse_nc_draws.rds);
+## if the cache is absent the non-centred model is refit from scratch.
+##
+## Writes:
+##   data-raw/holonomy_comparison.png
+##   data-raw/holonomy_comparison.rds   (comparison data frame for paper numbers)
+##
+## Run from package root:  Rscript data-raw/run_comparison.R
 
-library(cmdstanr)
 library(posterior)
 library(ggplot2)
 
@@ -19,176 +25,143 @@ invisible(lapply(
   source
 ))
 
-MIN_GAP     <- 3L
+out_dir     <- file.path(pkg_root, "data-raw")
+GAP_GRID    <- c(3L, 10L, 25L, 50L)
 N_BOOTSTRAP <- 200L
+J           <- 8L
+BASE_VARS   <- c("mu", "sigma")
+FIBER_C     <- paste0("alpha[",       seq_len(J), "]")
+FIBER_NC    <- paste0("alpha_tilde[", seq_len(J), "]")
 
-# ── 1. Load sparse data and centred draws ─────────────────────────────────────
+# ── 1. Load draws ─────────────────────────────────────────────────────────────
 
-saved   <- readRDS(file.path(pkg_root, "data-raw", "glmm_sparse_data.rds"))
-draws_c <- readRDS(file.path(pkg_root, "data-raw", "glmm_sparse_draws.rds"))
+draws_c  <- readRDS(file.path(out_dir, "glmm_sparse_draws.rds"))
+nc_cache <- file.path(out_dir, "glmm_sparse_nc_draws.rds")
 
-cat("── Non-centred fit ───────────────────────────────────────────────────────\n")
-
-# ── 2. Fit non-centred model ──────────────────────────────────────────────────
-
-mod_nc <- cmdstan_model(file.path(pkg_root, "inst", "stan", "glmm_noncentred.stan"))
-
-fit_nc <- mod_nc$sample(
-  data            = saved$stan_data,
-  chains          = 4L,
-  parallel_chains = 4L,
-  iter_warmup     = 1000L,
-  iter_sampling   = 2000L,
-  seed            = 123L,
-  refresh         = 500L
-)
-
-cat("\nSampler diagnostics (non-centred):\n")
-fit_nc$diagnostic_summary()
-
-draws_nc <- fit_nc$draws()
-
-# Quick ESS comparison
-summ_c  <- summarise_draws(draws_c,  "ess_bulk")[grep("^alpha\\[", summarise_draws(draws_c,  "ess_bulk")$variable), ]
-summ_nc <- summarise_draws(draws_nc, "ess_bulk")[grep("^alpha_tilde\\[", summarise_draws(draws_nc, "ess_bulk")$variable), ]
-
-cat(sprintf("\nMin ESS_bulk — centred alpha:       %.0f  (%.1f%%)\n",
-            min(summ_c$ess_bulk,  na.rm = TRUE),
-            100 * min(summ_c$ess_bulk,  na.rm = TRUE) / (4 * 2000)))
-cat(sprintf("Min ESS_bulk — non-centred tilde:   %.0f  (%.1f%%)\n",
-            min(summ_nc$ess_bulk, na.rm = TRUE),
-            100 * min(summ_nc$ess_bulk, na.rm = TRUE) / (4 * 2000)))
-
-saveRDS(draws_nc, file.path(pkg_root, "data-raw", "glmm_sparse_nc_draws.rds"))
-
-# ── 3. Run holonomy diagnostic on both ───────────────────────────────────────
-
-base_vars  <- c("mu", "sigma")
-
-# Centred: fiber = alpha[1..8] (raw intercepts; residualised against base)
-fiber_c    <- paste0("alpha[",       1:8, "]")
-
-# Non-centred: fiber = alpha_tilde[1..8] (standardised intercepts)
-# alpha_tilde is independent of (mu,sigma) by construction;
-# residualisation has no effect but we apply it for consistency.
-fiber_nc   <- paste0("alpha_tilde[", 1:8, "]")
-
-cat("\n── Holonomy diagnostic: centred (min_gap = ", MIN_GAP, ") ────────────────\n", sep = "")
-hd_c <- holonomy_diagnostic(
-  chain              = draws_c,
-  base_vars          = base_vars,
-  fiber_vars         = fiber_c,
-  epsilon            = NULL,
-  n_bootstrap        = N_BOOTSTRAP,
-  min_gap            = MIN_GAP,
-  residualize_fiber  = TRUE
-)
-print(hd_c)
-
-cat("\n── Holonomy diagnostic: non-centred (min_gap = ", MIN_GAP, ") ──────────────\n", sep = "")
-hd_nc <- holonomy_diagnostic(
-  chain              = draws_nc,
-  base_vars          = base_vars,
-  fiber_vars         = fiber_nc,
-  epsilon            = NULL,
-  n_bootstrap        = N_BOOTSTRAP,
-  min_gap            = MIN_GAP,
-  residualize_fiber  = TRUE
-)
-print(hd_nc)
-
-# ── 4. Side-by-side eigenspectrum plot ────────────────────────────────────────
-
-.evals_panel <- function(hd, label) {
-  evals <- hd$eigenvalues
-  boot  <- hd$boot_eigenvalues
-
-  boot_df <- if (!is.null(boot)) {
-    df <- data.frame(x = as.vector(Re(boot)), y = as.vector(Im(boot)))
-    df[complete.cases(df), ]
-  } else {
-    data.frame(x = numeric(0), y = numeric(0))
-  }
-  boot_df$panel <- label
-
-  pts_df <- data.frame(
-    x     = Re(evals),
-    y     = Im(evals),
-    idx   = seq_along(evals),
-    panel = label
+if (file.exists(nc_cache)) {
+  cat("Loading cached non-centred draws.\n")
+  draws_nc <- readRDS(nc_cache)
+} else {
+  cat("Cache absent — fitting non-centred model.\n")
+  library(cmdstanr)
+  saved  <- readRDS(file.path(out_dir, "glmm_sparse_data.rds"))
+  mod_nc <- cmdstan_model(file.path(pkg_root, "inst", "stan",
+                                    "glmm_noncentred.stan"))
+  fit_nc <- mod_nc$sample(
+    data            = saved$stan_data,
+    chains          = 4L,
+    parallel_chains = 4L,
+    iter_warmup     = 1000L,
+    iter_sampling   = 2000L,
+    seed            = 123L,
+    refresh         = 500L
   )
-
-  list(
-    boot = boot_df,
-    pts  = pts_df,
-    sub  = sprintf("||H-I||_F = %.3f  |  %d loops", hd$frobenius_dev, hd$n_loops)
-  )
+  draws_nc <- fit_nc$draws()
+  saveRDS(draws_nc, nc_cache)
 }
 
-p_c  <- .evals_panel(hd_c,  sprintf("Centred  (min_gap=%d)", MIN_GAP))
-p_nc <- .evals_panel(hd_nc, sprintf("Non-centred  (min_gap=%d)", MIN_GAP))
+# ── 2. Run holonomy_diagnostic at each gap for both parameterisations ─────────
 
-boot_all <- rbind(p_c$boot, p_nc$boot)
-pts_all  <- rbind(p_c$pts,  p_nc$pts)
+run_gaps <- function(draws, fiber_vars, label) {
+  lapply(GAP_GRID, function(g) {
+    cat(sprintf("  %s  gap = %d\n", label, g))
+    hd <- tryCatch(
+      suppressMessages(holonomy_diagnostic(
+        chain             = draws,
+        base_vars         = BASE_VARS,
+        fiber_vars        = fiber_vars,
+        min_gap           = g,
+        n_bootstrap       = N_BOOTSTRAP,
+        structure         = "diagonal",
+        weights           = "distance",
+        residualize_fiber = TRUE
+      )),
+      error = function(e) {
+        cat(sprintf("    Error: %s\n", conditionMessage(e)))
+        NULL
+      }
+    )
+    if (is.null(hd)) return(NULL)
 
-# Subtitle per panel via labeller
-sub_map <- c(p_c$sub, p_nc$sub)
-names(sub_map) <- c(p_c$pts$panel[1], p_nc$pts$panel[1])
-panel_labeller <- labeller(panel = sub_map)
+    h_point <- Re(hd$eigenvalues)          # J-vector
 
-theta  <- seq(0, 2 * pi, length.out = 300)
-circle <- data.frame(x = cos(theta), y = sin(theta),
-                     panel = p_c$pts$panel[1])  # drawn in both via facet
+    # 90% bootstrap CI per group from boot_eigenvalues [n_boot x J]
+    boot_re <- apply(Re(hd$boot_eigenvalues), 2L, function(x)
+      quantile(x, c(0.05, 0.95), na.rm = TRUE))
 
-comparison_plot <-
-  ggplot() +
-  # Unit circle (one data frame per panel via dummy facet)
-  geom_path(
-    data = rbind(
-      transform(circle, panel = p_c$pts$panel[1]),
-      transform(circle, panel = p_nc$pts$panel[1])
-    ),
-    aes(x = x, y = y),
-    colour = "grey60", linetype = "dashed", linewidth = 0.5
-  ) +
-  # Bootstrap clouds
-  geom_point(
-    data = boot_all,
-    aes(x = x, y = y),
-    colour = "steelblue", alpha = 0.06, size = 0.6
-  ) +
-  # Point estimates
-  geom_point(
-    data = pts_all,
-    aes(x = x, y = y),
-    colour = "firebrick", size = 3
-  ) +
-  geom_text(
-    data = pts_all,
-    aes(x = x, y = y, label = idx),
-    nudge_y = 0.05, size = 2.8, colour = "firebrick"
-  ) +
-  # Identity point
-  geom_point(
-    data = rbind(
-      data.frame(x = 1, y = 0, panel = p_c$pts$panel[1]),
-      data.frame(x = 1, y = 0, panel = p_nc$pts$panel[1])
-    ),
-    aes(x = x, y = y),
-    shape = 3, size = 4, colour = "black", stroke = 1
-  ) +
-  facet_wrap(~ panel, labeller = panel_labeller) +
-  coord_equal() +
+    data.frame(
+      param   = label,
+      gap     = g,
+      group   = seq_len(J),
+      h       = h_point,
+      h_lo    = boot_re[1L, ],
+      h_hi    = boot_re[2L, ],
+      n_loops = hd$n_loops
+    )
+  })
+}
+
+cat("── Centred ──────────────────────────────────────────────────────────────\n")
+rows_c  <- run_gaps(draws_c,  FIBER_C,  "Centred")
+
+cat("── Non-centred ──────────────────────────────────────────────────────────\n")
+rows_nc <- run_gaps(draws_nc, FIBER_NC, "Non-centred")
+
+comp_df <- do.call(rbind, c(rows_c, rows_nc))
+comp_df$gap_f   <- factor(comp_df$gap, levels = GAP_GRID)
+comp_df$group_f <- factor(comp_df$group)
+comp_df$param   <- factor(comp_df$param, levels = c("Centred", "Non-centred"))
+
+saveRDS(comp_df, file.path(out_dir, "holonomy_comparison.rds"))
+cat("\nSaved: data-raw/holonomy_comparison.rds\n")
+
+# ── 3. Print summary numbers for paper paragraph ──────────────────────────────
+
+cat("\nMean |h_j| by parameterisation and gap:\n")
+agg_h <- tapply(abs(comp_df[["h"]]), paste(comp_df[["param"]], comp_df[["gap"]]), mean)
+print(round(sort(agg_h), 4))
+
+# Quick check of "substantially larger" claim
+for (g in GAP_GRID) {
+  h_c  <- comp_df$h[comp_df$param == "Centred"     & comp_df$gap == g]
+  h_nc <- comp_df$h[comp_df$param == "Non-centred" & comp_df$gap == g]
+  cat(sprintf("gap=%2d  mean h_c=%.4f  mean h_nc=%.4f  ratio=%.1f\n",
+              g, mean(h_c), mean(h_nc),
+              mean(abs(h_c)) / max(mean(abs(h_nc)), 1e-6)))
+}
+
+# ── 4. Figure: h_j vs gap, lines per group, ribbons, two facets ───────────────
+
+pal <- scales::hue_pal()(J)
+
+fig <- ggplot(comp_df, aes(x = gap_f, y = h,
+                            colour = group_f, group = group_f)) +
+  geom_hline(yintercept = 0, colour = "grey70", linewidth = 0.4) +
+  geom_ribbon(aes(ymin = h_lo, ymax = h_hi, fill = group_f),
+              alpha = 0.12, colour = NA) +
+  geom_line(linewidth = 0.8) +
+  geom_point(size = 2.2) +
+  facet_wrap(~ param, nrow = 1L, scales = "fixed") +
+  scale_colour_manual(values = pal, name = "Group") +
+  scale_fill_manual(  values = pal, name = "Group") +
+  scale_x_discrete(labels = as.character(GAP_GRID)) +
   labs(
-    title    = "Centred vs non-centred: holonomy eigenspectrum",
-    subtitle = sprintf("Sparse GLMM  |  J=8, n_j=3, sigma_true=3  |  min_gap=%d", MIN_GAP),
-    x        = expression(Re(lambda)),
-    y        = expression(Im(lambda))
+    title    = "Centred vs non-centred: per-group transport factors across gap grid",
+    subtitle = sprintf(
+      "Sparse GLMM  |  J=%d, n_j=3, σ_true=3  |  diagonal estimator, bootstrap 90%% CI",
+      J
+    ),
+    x = "Gap  g",
+    y = expression(hat(h)[j] ~ "(transport factor)")
   ) +
   theme_minimal(base_size = 12) +
-  theme(strip.text = element_text(face = "bold"))
+  theme(
+    legend.position  = "right",
+    strip.text       = element_text(face = "bold", size = 12),
+    panel.spacing    = unit(1.5, "lines")
+  )
 
-out_file <- file.path(pkg_root, "data-raw", "holonomy_comparison.png")
-ggsave(out_file, plot = comparison_plot, width = 12, height = 6, dpi = 150)
-cat(sprintf("\nSaved: %s\n", out_file))
-cat("Done.\n")
+ggsave(file.path(out_dir, "holonomy_comparison.png"),
+       plot = fig, width = 11, height = 5, dpi = 150)
+cat("Saved: data-raw/holonomy_comparison.png\n")
+cat("\nDone.\n")

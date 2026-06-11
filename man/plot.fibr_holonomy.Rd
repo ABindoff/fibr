@@ -4,12 +4,13 @@
 \alias{plot.fibr_holonomy}
 \title{Plot a fibr_holonomy object}
 \usage{
-\method{plot}{fibr_holonomy}(x, type = c("eigenspectrum", "base_loops"), ...)
+\method{plot}{fibr_holonomy}(x, type = NULL, ...)
 }
 \arguments{
 \item{x}{A \code{fibr_holonomy} object.}
 
-\item{type}{\code{"eigenspectrum"} or \code{"base_loops"}.}
+\item{type}{\code{"contraction"}, \code{"eigenspectrum"}, or \code{"base_loops"}.
+\code{NULL} (default) chooses based on the fit structure.}
 
 \item{...}{Ignored.}
 }
@@ -17,10 +18,16 @@
 A \code{ggplot} object (printed invisibly; assign to capture).
 }
 \description{
-Two plot types are available:
+Three plot types are available:
 \itemize{
-\item \code{"eigenspectrum"} (default): eigenvalues of \eqn{\hat{H}} in the complex
-plane with the unit circle as reference and bootstrap clouds.
+\item \code{"contraction"} (default for diagonal-structure fits): per-group
+transport factors \eqn{h_j} with bootstrap intervals, against group
+index.  Group identity is preserved, so \eqn{h_j} can be compared
+directly with per-group analytic quantities such as the prior fraction
+\eqn{\pi_j} or the integrated transport prediction.
+\item \code{"eigenspectrum"} (default for full-structure fits): eigenvalues of
+\eqn{\hat{H}} in the complex plane with the unit circle as reference and
+bootstrap clouds.
 \item \code{"base_loops"}: scatter of detected loop pairs (start vs end iteration),
 coloured by base-space distance.
 }

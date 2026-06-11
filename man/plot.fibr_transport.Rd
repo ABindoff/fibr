@@ -2,12 +2,19 @@
 % Please edit documentation in R/curvature.R
 \name{plot.fibr_transport}
 \alias{plot.fibr_transport}
-\title{Plot analytical vs empirical fiber displacement}
+\title{Plot analytical vs empirical fiber displacement or detail loop trajectories}
 \usage{
-\method{plot}{fibr_transport}(x, ...)
+\method{plot}{fibr_transport}(x, type = c("scatter", "trajectory"), loop_idx = 1L, groups = NULL, ...)
 }
 \arguments{
 \item{x}{A \code{fibr_transport} object.}
+
+\item{type}{\code{"scatter"} or \code{"trajectory"}.}
+
+\item{loop_idx}{Integer; which loop to plot for \code{"trajectory"} (default 1, the tightest loop).}
+
+\item{groups}{Integer vector of length 2; group indices to plot for contrast.
+If \code{NULL} (default), automatically selects the groups with the maximum and minimum drift.}
 
 \item{...}{Ignored.}
 }
@@ -15,9 +22,13 @@
 A \code{ggplot} object (printed invisibly).
 }
 \description{
-Scatter plot comparing the connection-predicted displacement
+Two plot types are available:
+\itemize{
+\item \code{"scatter"} (default): compares the connection-predicted displacement
 \eqn{\alpha_{\text{transported}} - \alpha_{\text{start}}} against the
 observed displacement \eqn{\alpha_{\text{end}} - \alpha_{\text{start}}}
-across all loops and fiber dimensions.  Agreement along the diagonal
-indicates the MCMC chain is tracking the horizontal lift.
+across all loops and fiber dimensions.
+\item \code{"trajectory"}: plots the detailed step-by-step parallel transport trajectory of
+a single loop, contrasting a group with high holonomy against a group with low holonomy.
+}
 }

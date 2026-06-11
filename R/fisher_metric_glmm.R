@@ -19,7 +19,7 @@
 #' @param mu,log_sigma,alpha,beta  Scalar / J-vector / 2-vector of parameters.
 #' @param stan_data  Named list with X, y, group.
 #' @return P-vector of diagonal metric entries (P = J + 4), in order
-#'   (G_mu, G_ls, G_alpha[1:J], G_beta[1:2]).
+#'   (G_mu, G_ls, G_alpha\[1:J\], G_beta\[1:2\]).
 #' @keywords internal
 .glmm_diag_metric <- function(mu, log_sigma, alpha, beta, stan_data) {
 
@@ -145,7 +145,7 @@
 #'
 #' @inheritParams .glmm_full_metric
 #' @return Numeric vector of length P, in order
-#'   (grad_mu, grad_log_sigma, grad_alpha[1:J], grad_beta[1:2]).
+#'   (grad_mu, grad_log_sigma, grad_alpha\[1:J\], grad_beta\[1:2\]).
 #' @keywords internal
 .glmm_grad_vec <- function(mu, log_sigma, alpha, beta, stan_data) {
   g <- .glmm_grad_log_post(mu, log_sigma, alpha, beta, stan_data)

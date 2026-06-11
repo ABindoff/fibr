@@ -18,10 +18,10 @@ J-vector.
 For the 2D base (mu, sigma), the curvature collapses to a J-vector:
 }
 \details{
-F\link{j} = d_mu A\link{j,sigma} - d_sigma A\link{j,mu}
-= -2 / (sigma^5 * G_FF\link{j}^2)
+F[j] = d_mu A[j,sigma] - d_sigma A[j,mu]
+= -2 / (sigma^5 * G_FF[j]^2)
 
-F\link{j} < 0 for all j: the connection is contractive (not rotational) for
-this model.  |F\link{j}| grows as the prior dominates (small data, large sigma).
+F[j] < 0 for all j: the connection is contractive (not rotational) for
+this model.  |F[j]| grows as the prior dominates (small data, large sigma).
 }
 \keyword{internal}

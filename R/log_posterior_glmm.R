@@ -48,8 +48,8 @@
 
   # Gradient wrt log_sigma (chain rule: ∂/∂log_sigma = sigma * ∂/∂sigma)
   # ∂ lp / ∂ sigma = -1 (exp prior) + sum[-(1/sigma) + (alpha_j-mu)^2/sigma^3]
-  # ∂ lp / ∂ log_sigma = sigma * ∂ lp / ∂ sigma
-  g_log_sigma <- -sigma + sum((alpha - mu)^2 / sigma^2 - 1)
+  # ∂ lp / ∂ log_sigma = sigma * ∂ lp / ∂ sigma + 1 (Jacobian: d/d(ls) of log_sigma term)
+  g_log_sigma <- -sigma + 1 + sum((alpha - mu)^2 / sigma^2 - 1)
 
   # Gradient wrt alpha_j
   lik_contrib_alpha <- as.vector(tapply(resid, stan_data$group, sum))

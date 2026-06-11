@@ -90,16 +90,35 @@ cat("\n2b. SoftAbs metric (full metric with off-diagonal coupling, always PD):\n
 draws_sa <- do.call(riemannian_mcmc, c(RMHMC_ARGS, list(method = "softabs",
                                                           softabs_alpha = 1.0)))
 
+cat("\n2c. Horizontal leapfrog HMC (diagonal metric + per-step connection correction):\n")
+draws_horiz <- horizontal_hmc(
+  stan_data   = stan_data,
+  n_iter      = 2000L,
+  n_warmup    = 2000L,
+  n_chains    = 4L,
+  L           = 1L,
+  epsilon     = 0.10,
+  target_rate = 0.57,
+  init        = init_pm,
+  seed        = 42L,
+  verbose     = TRUE
+)
+
 cat("\nDiagonal RMHMC summary:\n")
-print(summarise_draws(subset_draws(draws_diag, variable = key_vars),
+print(summarise_draws(subset_draws(draws_diag,  variable = key_vars),
                       "ess_bulk", "rhat"), n = Inf)
 
 cat("\nSoftAbs RMHMC summary:\n")
-print(summarise_draws(subset_draws(draws_sa, variable = key_vars),
+print(summarise_draws(subset_draws(draws_sa,    variable = key_vars),
                       "ess_bulk", "rhat"), n = Inf)
 
-saveRDS(draws_diag, file.path(out_dir, "glmm_sparse_rmhmc_diag.rds"))
-saveRDS(draws_sa,   file.path(out_dir, "glmm_sparse_rmhmc_sa.rds"))
+cat("\nHorizontal leapfrog HMC summary:\n")
+print(summarise_draws(subset_draws(draws_horiz, variable = key_vars),
+                      "ess_bulk", "rhat"), n = Inf)
+
+saveRDS(draws_diag,  file.path(out_dir, "glmm_sparse_rmhmc_diag.rds"))
+saveRDS(draws_sa,    file.path(out_dir, "glmm_sparse_rmhmc_sa.rds"))
+saveRDS(draws_horiz, file.path(out_dir, "glmm_sparse_horiz_hmc.rds"))
 
 # ── 3. Reload other chains ────────────────────────────────────────────────────
 
@@ -130,43 +149,46 @@ draws_hc <- fit_hc$draws()
 
 nominal <- 4L * 2000L
 df_ess <- rbind(
-  .get_ess(draws_c,    "Centred"),
-  .get_ess(draws_hc,   "H-corrected"),
-  .get_ess(draws_diag, "RMHMC-diag"),
-  .get_ess(draws_sa,   "RMHMC-SoftAbs"),
-  .get_ess(draws_nc,   "Non-centred")
+  .get_ess(draws_c,     "Centred"),
+  .get_ess(draws_hc,    "H-corrected"),
+  .get_ess(draws_diag,  "RMHMC-diag"),
+  .get_ess(draws_sa,    "RMHMC-SoftAbs"),
+  .get_ess(draws_horiz, "Horiz-HMC"),
+  .get_ess(draws_nc,    "Non-centred")
 )
 df_ess$pct      <- df_ess$ess / nominal * 100
 df_ess$model    <- factor(df_ess$model,
-                           levels=c("Centred","H-corrected",
-                                    "RMHMC-diag","RMHMC-SoftAbs","Non-centred"))
-df_ess$variable <- factor(df_ess$variable, levels=key_vars)
+                           levels = c("Centred", "H-corrected",
+                                      "RMHMC-diag", "RMHMC-SoftAbs",
+                                      "Horiz-HMC", "Non-centred"))
+df_ess$variable <- factor(df_ess$variable, levels = key_vars)
 
 cat("\nMin ESS_bulk per model:\n")
-agg <- aggregate(pct ~ model, data=df_ess, FUN=min)
-print(agg, row.names=FALSE)
+agg <- aggregate(pct ~ model, data = df_ess, FUN = min)
+print(agg, row.names = FALSE)
 
 # ── 4. Bar chart ──────────────────────────────────────────────────────────────
 
-p_ess <- ggplot(df_ess, aes(x=variable, y=pct, fill=model)) +
-  geom_col(position="dodge", width=0.72) +
-  geom_hline(yintercept=100, linetype="dotted", colour="grey40") +
+p_ess <- ggplot(df_ess, aes(x = variable, y = pct, fill = model)) +
+  geom_col(position = "dodge", width = 0.72) +
+  geom_hline(yintercept = 100, linetype = "dotted", colour = "grey40") +
   scale_fill_manual(
-    values=c("Centred"       = "#4682B4",
-             "H-corrected"   = "#B22222",
-             "RMHMC-diag"    = "#FF8C00",
-             "RMHMC-SoftAbs" = "#9932CC",
-             "Non-centred"   = "#2E8B57")
+    values = c("Centred"        = "#4682B4",
+               "H-corrected"    = "#B22222",
+               "RMHMC-diag"     = "#FF8C00",
+               "RMHMC-SoftAbs"  = "#9932CC",
+               "Horiz-HMC"      = "#20B2AA",
+               "Non-centred"    = "#2E8B57")
   ) +
   labs(
-    title="Five-way ESS comparison — sparse GLMM (J=8, n_j=3, sigma_true=3)",
-    subtitle=paste("SoftAbs: full G with off-diagonal coupling, always PD;",
-                   "Diagonal: per-parameter scaling only"),
-    x=NULL, y="ESS bulk (% of nominal)", fill=NULL
+    title    = "Six-way ESS comparison — sparse GLMM (J=8, n_j=3, sigma_true=3)",
+    subtitle = paste("Horiz-HMC: diagonal metric + per-step connection correction;",
+                     "SoftAbs: full G always PD; Diagonal: per-parameter scaling"),
+    x = NULL, y = "ESS bulk (% of nominal)", fill = NULL
   ) +
-  theme_minimal(base_size=12) +
-  theme(axis.text.x=element_text(angle=40, hjust=1),
-        legend.position="bottom")
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1),
+        legend.position = "bottom")
 
 ggsave(file.path(out_dir, "milestone4_ess.png"),
        plot=p_ess, width=10, height=5, dpi=150)

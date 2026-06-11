@@ -1,6 +1,7 @@
 library(posterior)
 
 # Tiny dataset for fast sampler tests
+set.seed(7L)
 tiny_data <- list(
   N     = 16L,
   J     = 2L,

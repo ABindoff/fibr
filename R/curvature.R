@@ -136,6 +136,7 @@ integrate_transport <- function(connection,
 
   attr(result, "fiber_vars") <- fib_vars
   attr(result, "J")          <- J
+  attr(result, "connection") <- connection
   class(result)              <- c("fibr_transport", "data.frame")
   result
 }
@@ -147,6 +148,10 @@ integrate_transport <- function(connection,
 print.fibr_transport <- function(x, ...) {
   J      <- attr(x, "J")
   fvars  <- attr(x, "fiber_vars")
+  if (is.null(J) || is.null(fvars)) {
+    class(x) <- "data.frame"
+    return(print(x, ...))
+  }
   K      <- nrow(x)
 
   cat("fibr parallel transport\n")
@@ -181,19 +186,38 @@ print.fibr_transport <- function(x, ...) {
   invisible(x)
 }
 
-#' Plot analytical vs empirical fiber displacement
+#' Plot analytical vs empirical fiber displacement or detail loop trajectories
 #'
-#' Scatter plot comparing the connection-predicted displacement
-#' \eqn{\alpha_{\text{transported}} - \alpha_{\text{start}}} against the
-#' observed displacement \eqn{\alpha_{\text{end}} - \alpha_{\text{start}}}
-#' across all loops and fiber dimensions.  Agreement along the diagonal
-#' indicates the MCMC chain is tracking the horizontal lift.
+#' @description
+#' Two plot types are available:
+#' - `"scatter"` (default): compares the connection-predicted displacement
+#'   \eqn{\alpha_{\text{transported}} - \alpha_{\text{start}}} against the
+#'   observed displacement \eqn{\alpha_{\text{end}} - \alpha_{\text{start}}}
+#'   across all loops and fiber dimensions.
+#' - `"trajectory"`: plots the detailed step-by-step parallel transport trajectory of
+#'   a single loop, contrasting a group with high holonomy against a group with low holonomy.
 #'
 #' @param x A `fibr_transport` object.
+#' @param type `"scatter"` or `"trajectory"`.
+#' @param loop_idx Integer; which loop to plot for `"trajectory"` (default 1, the tightest loop).
+#' @param groups Integer vector of length 2; group indices to plot for contrast.
+#'   If `NULL` (default), automatically selects the groups with the maximum and minimum drift.
 #' @param ... Ignored.
+#'
 #' @return A `ggplot` object (printed invisibly).
 #' @export
-plot.fibr_transport <- function(x, ...) {
+plot.fibr_transport <- function(x, type = c("scatter", "trajectory"), loop_idx = 1L, groups = NULL, ...) {
+  type <- match.arg(type)
+  p <- if (type == "scatter") {
+    .plot_transport_scatter(x)
+  } else {
+    .plot_transport_trajectory(x, loop_idx = loop_idx, groups = groups)
+  }
+  print(p)
+  invisible(p)
+}
+
+.plot_transport_scatter <- function(x) {
   J     <- attr(x, "J")
   fvars <- attr(x, "fiber_vars")
 
@@ -223,8 +247,174 @@ plot.fibr_transport <- function(x, ...) {
     ) +
     ggplot2::theme_minimal(base_size = 11)
 
-  print(p)
-  invisible(p)
+  p
+}
+
+.plot_transport_trajectory <- function(x, loop_idx = 1L, groups = NULL) {
+  conn <- attr(x, "connection")
+  if (is.null(conn)) {
+    stop("x must contain a 'connection' attribute to plot trajectories. Please re-run integrate_transport().")
+  }
+
+  if (loop_idx < 1L || loop_idx > nrow(x)) {
+    stop(sprintf("loop_idx must be between 1 and %d.", nrow(x)))
+  }
+
+  loop_row <- x[loop_idx, ]
+  start_i  <- loop_row$start
+  end_i    <- loop_row$end
+
+  full_mat  <- conn$full_mat
+  base_vars <- conn$base_vars
+  fib_vars  <- conn$fiber_vars
+  bet_vars  <- conn$beta_vars
+  stan_data <- conn$stan_data
+  J         <- length(fib_vars)
+  X         <- stan_data$X
+  group     <- stan_data$group
+  beta0     <- colMeans(full_mat[, bet_vars, drop = FALSE])
+
+  # Extract path
+  path     <- full_mat[start_i:end_i, , drop = FALSE]
+  L        <- nrow(path)
+  progress <- (seq_len(L) - 1L) / (L - 1L)
+
+  # Parallel transport integration along this loop
+  alpha_trans <- matrix(NA_real_, L, J)
+  alpha_trans[1L, ] <- as.vector(path[1L, fib_vars])
+
+  for (t in seq_len(L - 1L)) {
+    row_t  <- path[t, ]
+    mu_t   <- row_t[[base_vars[1L]]]
+    sig_t  <- row_t[[base_vars[2L]]]
+    alp_t  <- alpha_trans[t, ]
+    bet_t  <- as.vector(row_t[bet_vars])
+    dtheta <- as.vector(path[t + 1L, base_vars]) - as.vector(row_t[base_vars])
+
+    G_FF_t <- .glmm_G_FF(sig_t, alp_t, X, group, bet_t)
+    G_BF_t <- .glmm_G_BF(sig_t, mu_t, alp_t)
+    A_t    <- .glmm_connection(G_FF_t, G_BF_t)
+
+    alpha_trans[t + 1L, ] <- alp_t + A_t %*% dtheta
+  }
+
+  # Calculate absolute drifts for group selection
+  drifts <- alpha_trans[L, ] - alpha_trans[1L, ]
+
+  # Automatic group selection
+  if (is.null(groups)) {
+    g_high <- which.max(abs(drifts))
+    g_low  <- which.min(abs(drifts))
+  } else {
+    if (length(groups) != 2L) stop("groups must be an integer vector of length 2.")
+    g_high <- groups[1L]
+    g_low  <- groups[2L]
+  }
+
+  # Prepare base space data
+  df_base <- data.frame(
+    mu       = path[, base_vars[1L]],
+    sigma    = path[, base_vars[2L]],
+    progress = progress
+  )
+
+  # Function to build individual group trajectory plot
+  .make_traj_plot <- function(g_idx, label) {
+    df_traj <- data.frame(
+      progress  = progress,
+      transport = alpha_trans[, g_idx],
+      empirical = path[, fib_vars[g_idx]]
+    )
+
+    start_val <- df_traj$transport[1L]
+    end_trans <- df_traj$transport[L]
+    end_emp   <- df_traj$empirical[L]
+
+    drift_val  <- end_trans - start_val
+    drift_text <- sprintf("Delta*alpha[trans] == %.3f", drift_val)
+    y_mid      <- (end_trans + start_val) / 2
+
+    # Y limits for text margin
+    y_range <- range(c(df_traj$transport, df_traj$empirical))
+    
+    col_palette <- ggplot2::scale_colour_viridis_c(option = "plasma", name = "Progress")
+
+    p <- ggplot2::ggplot(df_traj, ggplot2::aes(x = progress)) +
+      # Start value reference line
+      ggplot2::geom_hline(yintercept = start_val, linetype = "dashed", color = "grey60") +
+      # Empirical MCMC path
+      ggplot2::geom_path(ggplot2::aes(y = empirical), color = "grey55", linewidth = 1.0, linetype = "dotted") +
+      # Parallel transported path
+      ggplot2::geom_path(ggplot2::aes(y = transport, color = progress), linewidth = 1.5) +
+      col_palette +
+      # Start/End points
+      ggplot2::geom_point(data = df_traj[1L, ], ggplot2::aes(y = transport), color = "black", size = 2.5, shape = 21, fill = "white", stroke = 1.2) +
+      ggplot2::geom_point(data = df_traj[L, ], ggplot2::aes(y = transport), color = "red", size = 2.5, shape = 19) +
+      # Drift bracket
+      ggplot2::annotate("segment", x = 1.01, xend = 1.01, y = start_val, yend = end_trans,
+                        arrow = ggplot2::arrow(ends = "both", angle = 90, length = ggplot2::unit(0.05, "inches")),
+                        color = "red", linewidth = 0.8) +
+      ggplot2::annotate("text", x = 0.92, y = y_mid, label = drift_text,
+                        color = "red", size = 3.2, parse = TRUE, hjust = 1, fontface = "bold") +
+      ggplot2::scale_x_continuous(limits = c(0, 1.02), breaks = c(0, 0.25, 0.5, 0.75, 1.0),
+                                  labels = c("0%", "25%", "50%", "75%", "100%")) +
+      ggplot2::labs(
+        title    = label,
+        x        = "Loop Progress",
+        y        = expression(alpha[j])
+      ) +
+      ggplot2::theme_minimal(base_size = 11) +
+      ggplot2::theme(
+        plot.title         = ggplot2::element_text(face = "bold", size = 11),
+        legend.position    = "none",
+        panel.grid.minor   = ggplot2::element_blank()
+      )
+    p
+  }
+
+  p_base <- ggplot2::ggplot(df_base, ggplot2::aes(x = mu, y = sigma, color = progress)) +
+    ggplot2::geom_path(linewidth = 2) +
+    ggplot2::geom_point(data = df_base[1L, ], color = "black", size = 3, shape = 21, fill = "white", stroke = 1.5) +
+    ggplot2::geom_text(data = df_base[1L, ], ggplot2::aes(label = "Start/End"),
+                       hjust = -0.2, vjust = -0.5, color = "black", fontface = "bold", size = 3.2) +
+    ggplot2::scale_colour_viridis_c(option = "plasma", name = "Progress") +
+    ggplot2::labs(
+      title    = "Base Space Loop Trajectory",
+      subtitle = sprintf("Loop %d (length = %d steps)", loop_idx, L - 1L),
+      x        = expression(mu),
+      y        = expression(sigma)
+    ) +
+    ggplot2::theme_minimal(base_size = 11) +
+    ggplot2::theme(
+      plot.title         = ggplot2::element_text(face = "bold", size = 12),
+      plot.subtitle      = ggplot2::element_text(color = "grey40", size = 9),
+      legend.position    = "left",
+      panel.grid.minor   = ggplot2::element_blank()
+    )
+
+  p_high <- .make_traj_plot(g_high, sprintf("Fibre with Holonomy: Group %d (Max Drift)", g_high))
+  p_low  <- .make_traj_plot(g_low,  sprintf("Fibre without Holonomy: Group %d (Min Drift)", g_low))
+
+  title_theme <- ggplot2::theme(
+    plot.title    = ggplot2::element_text(face = "bold", size = 15, hjust = 0.5),
+    plot.subtitle = ggplot2::element_text(color = "grey30", size = 10, hjust = 0.5, margin = ggplot2::margin(b = 10))
+  )
+
+  if (requireNamespace("patchwork", quietly = TRUE)) {
+    p_combined <- (p_base | (p_high / p_low)) +
+      patchwork::plot_layout(widths = c(1, 1.8)) +
+      patchwork::plot_annotation(
+        title    = "Fibre Holonomy Trajectory Diagnostic",
+        subtitle = "Solid path = parallel transport (analytical); Dotted path = MCMC chain (empirical).",
+        theme    = title_theme
+      )
+    p_combined
+  } else {
+    print(p_base)
+    print(p_high)
+    print(p_low)
+    p_high
+  }
 }
 
 #' Holonomy along a synthetic circular loop in base space
@@ -304,10 +494,12 @@ synthetic_holonomy_loop <- function(connection,
     delta_alpha_total <- delta_alpha_total + A_s %*% c(dmu, dsig)
   }
 
-  # H_numerical[j] = 1 + delta_alpha[j] / alpha0[j]
-  # (holonomy scalar: how much the fiber is displaced relative to its start)
-  # Use absolute displacement when alpha0 is near zero to avoid divide-by-zero
-  H_numerical <- 1 + delta_alpha_total / pmax(abs(alpha0), 0.1)
+  # Shared denominator for both H_numerical and H_stokes: alpha0 floored at
+  # 0.05 (in absolute value) to avoid divide-by-zero near the origin.
+  # Both scalars must use the same denom so the comparison is consistent.
+  denom <- ifelse(abs(alpha0) > 0.05, alpha0, sign(alpha0) * 0.05)
+
+  H_numerical <- 1 + delta_alpha_total / denom
 
   # ── Stokes approximation ────────────────────────────────────────────────────
   # For a vector bundle (additive parallel transport), the first-order Stokes
@@ -323,7 +515,6 @@ synthetic_holonomy_loop <- function(connection,
   F_c     <- .glmm_curvature(G_FF_c, sigma0)
 
   area_circle  <- pi * radius^2
-  denom        <- ifelse(abs(alpha0) > 0.05, alpha0, sign(alpha0) * 0.05)
   H_stokes     <- 1 + F_c * area_circle / denom
 
   data.frame(

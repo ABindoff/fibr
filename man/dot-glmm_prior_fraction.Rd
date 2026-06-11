@@ -2,12 +2,12 @@
 % Please edit documentation in R/connection_glmm.R
 \name{.glmm_prior_fraction}
 \alias{.glmm_prior_fraction}
-\title{Fraction of G_FF\link{j} attributable to the prior (vs likelihood)}
+\title{Fraction of G_FF[j] attributable to the prior (vs likelihood)}
 \usage{
 .glmm_prior_fraction(G_FF_diag, sigma)
 }
 \description{
-Returns a J-vector in \link{0, 1}.  Values near 1 → prior-dominated (sparse
+Returns a J-vector in [0, 1].  Values near 1 → prior-dominated (sparse
 data or large sigma); values near 0 → data-dominated (well-identified).
 }
 \keyword{internal}

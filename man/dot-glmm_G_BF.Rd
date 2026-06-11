@@ -17,7 +17,7 @@
 J x 2 matrix.
 }
 \description{
-G_BF\link{j, 1} = -1/sigma^2              (base direction: mu)
-G_BF\link{j, 2} = -2*(alpha_j - mu)/sigma^3   (base direction: sigma)
+G_BF[j, 1] = -1/sigma^2              (base direction: mu)
+G_BF[j, 2] = -2*(alpha_j - mu)/sigma^3   (base direction: sigma)
 }
 \keyword{internal}

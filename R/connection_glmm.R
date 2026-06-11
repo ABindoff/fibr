@@ -11,7 +11,7 @@
 
 #' Diagonal of the fiber metric block G_FF at one parameter point
 #'
-#' G_FF[j,j] = 1/sigma^2  +  sum_{i in group_j} p_ij * (1 - p_ij)
+#' G_FF\[j,j\] = 1/sigma^2  +  sum_{i in group_j} p_ij * (1 - p_ij)
 #'
 #' @param sigma  Scalar; group-level SD.
 #' @param alpha  J-vector; group intercepts.
@@ -33,8 +33,8 @@
 
 #' Off-diagonal block G_BF at one parameter point
 #'
-#' G_BF[j, 1] = -1/sigma^2              (base direction: mu)
-#' G_BF[j, 2] = -2*(alpha_j - mu)/sigma^3   (base direction: sigma)
+#' G_BF\[j, 1\] = -1/sigma^2              (base direction: mu)
+#' G_BF\[j, 2\] = -2*(alpha_j - mu)/sigma^3   (base direction: sigma)
 #'
 #' @param sigma  Scalar.
 #' @param mu     Scalar.
@@ -51,13 +51,13 @@
 
 #' Connection form A at one parameter point
 #'
-#' A = -G_FF^{-1} G_BF^T   [J x 2]
+#' A = -G_FF^{-1} G_BF^T   (J x 2)
 #'
 #' The horizontal lift of a base motion dtheta = (dmu, dsigma) is
 #' dalpha = A %*% dtheta.
 #'
-#' A[j, 1] =  1 / (sigma^2 * G_FF[j])
-#' A[j, 2] =  2*(alpha_j - mu) / (sigma^3 * G_FF[j])
+#' A\[j, 1\] =  1 / (sigma^2 * G_FF\[j\])
+#' A\[j, 2\] =  2*(alpha_j - mu) / (sigma^3 * G_FF\[j\])
 #'
 #' @param G_FF_diag J-vector returned by [.glmm_G_FF()].
 #' @param G_BF      J x 2 matrix returned by [.glmm_G_BF()].
@@ -73,11 +73,11 @@
 #'
 #' For the 2D base (mu, sigma), the curvature collapses to a J-vector:
 #'
-#'   F[j] = d_mu A[j,sigma] - d_sigma A[j,mu]
-#'        = -2 / (sigma^5 * G_FF[j]^2)
+#'   F\[j\] = d_mu A\[j,sigma\] - d_sigma A\[j,mu\]
+#'        = -2 / (sigma^5 * G_FF\[j\]^2)
 #'
-#' F[j] < 0 for all j: the connection is contractive (not rotational) for
-#' this model.  |F[j]| grows as the prior dominates (small data, large sigma).
+#' F\[j\] < 0 for all j: the connection is contractive (not rotational) for
+#' this model.  |F\[j\]| grows as the prior dominates (small data, large sigma).
 #'
 #' @param G_FF_diag J-vector.
 #' @param sigma     Scalar.
@@ -89,9 +89,9 @@
 
 # ── Prior-vs-likelihood information decomposition ─────────────────────────────
 
-#' Fraction of G_FF[j] attributable to the prior (vs likelihood)
+#' Fraction of G_FF\[j\] attributable to the prior (vs likelihood)
 #'
-#' Returns a J-vector in [0, 1].  Values near 1 → prior-dominated (sparse
+#' Returns a J-vector in \[0, 1\].  Values near 1 → prior-dominated (sparse
 #' data or large sigma); values near 0 → data-dominated (well-identified).
 #' @keywords internal
 .glmm_prior_fraction <- function(G_FF_diag, sigma) {

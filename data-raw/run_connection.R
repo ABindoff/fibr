@@ -98,34 +98,31 @@ df_curve <- do.call(rbind, lapply(r_grid, function(r) {
   res <- synthetic_holonomy_loop(conn, radius = r, n_steps = 400L)
   data.frame(
     radius      = r,
-    area        = pi * r^2,
-    H_numerical = mean(res$H_numerical),
-    H_stokes    = mean(res$H_stokes)
+    group       = factor(res$j),
+    H_numerical = res$H_numerical,
+    H_stokes    = res$H_stokes
   )
 }))
 
-cat("Holonomy vs radius (group-averaged):\n")
+cat("Holonomy vs radius (per group):\n")
 print(df_curve, row.names = FALSE, digits = 4)
 
-p_curve <- ggplot(df_curve, aes(x = area)) +
-  geom_line(aes(y = H_stokes,    colour = "Stokes  1 + F*area/alpha0"),
-            linewidth = 1) +
-  geom_point(aes(y = H_numerical, colour = "Numerical  integral of A"),
-             size = 2.5) +
+p_curve <- ggplot(df_curve, aes(x = radius, colour = group)) +
+  geom_vline(xintercept = 0.20, linetype = "dashed", colour = "grey70") +
+  geom_line(aes(y = H_stokes), linewidth = 0.7) +
+  geom_point(aes(y = H_numerical), size = 1.8, shape = 16) +
   geom_hline(yintercept = 1, linetype = "dotted", colour = "grey50") +
-  scale_colour_manual(
-    values = c("Stokes  1 + F*area/alpha0" = "firebrick",
-               "Numerical  integral of A"   = "steelblue")
-  ) +
+  annotate("text", x = 0.20, y = Inf, label = "r = 0.20",
+           hjust = -0.1, vjust = 1.5, size = 3.2, colour = "grey50") +
+  scale_colour_viridis_d(option = "turbo", name = "Group j") +
   labs(
-    title    = "Holonomy vs loop area — GLMM centred parameterisation",
-    subtitle = "Vector-bundle Stokes (additive): H = 1 + F·area/α₀  |  centre = posterior mean",
-    x        = expression(pi * r^2 ~ "(loop area)"),
-    y        = "Mean holonomy H (group-averaged)",
-    colour   = NULL
+    title    = "Holonomy vs loop radius — GLMM centred parameterisation",
+    subtitle = "Lines: Stokes  H = 1 + Fⱼ·πr²/α₀ⱼ  |  Points: numerical integration  |  centre = posterior mean",
+    x        = expression(r ~ "(loop radius, posterior SD units)"),
+    y        = expression(H[j] ~ "(holonomy per group)")
   ) +
   theme_minimal(base_size = 12) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "right")
 
 ggsave(file.path(out_dir, "holonomy_vs_radius.png"),
        plot = p_curve, width = 7, height = 5, dpi = 150)

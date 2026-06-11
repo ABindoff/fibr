@@ -26,3 +26,14 @@ vignettes/*.html
 vignettes/*.md
 
 .repro/
+
+# manuscript drafts
+manuscript/
+manuscript2/
+
+# Handoff/planning documents
+HANDOFF*.md
+data-raw/HANDOFF*.md
+
+# Large simulation output caches
+data-raw/simstud_draws/
