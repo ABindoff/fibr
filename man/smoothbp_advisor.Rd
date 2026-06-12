@@ -26,8 +26,7 @@ element per breakpoint that has omega random effects, each with
 \code{prior_frac_mean}, \code{prior_frac_q05}, \code{prior_frac_q95},
 \code{recommendation}, and \code{delta} (one entry per group).  \code{delta[j]} is the
 recommended per-group NC mixing fraction
-\eqn{\delta_j = \sqrt{\text{prior\_frac}_j}}, which can be passed
-directly to \code{smoothbp()} via \code{re_fraction = as_smoothbp_re_fraction(advice)}.
+\eqn{\delta_j = \sqrt{\text{prior\_frac}_j}}.
 Print and plot methods included.
 }
 \description{
@@ -89,7 +88,4 @@ likelihood:
 
 where \eqn{d_{ki} = \tau_i - \omega_{k,i}} and
 \eqn{\sigma_{ki} = \text{logistic}(d_{ki}\,\rho_{ki})}.
-}
-\seealso{
-\code{\link[=as_smoothbp_re_fraction]{as_smoothbp_re_fraction()}}
 }

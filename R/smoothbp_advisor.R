@@ -76,11 +76,9 @@
 #'   `prior_frac_mean`, `prior_frac_q05`, `prior_frac_q95`,
 #'   `recommendation`, and `delta` (one entry per group).  `delta[j]` is the
 #'   recommended per-group NC mixing fraction
-#'   \eqn{\delta_j = \sqrt{\text{prior\_frac}_j}}, which can be passed
-#'   directly to `smoothbp()` via `re_fraction = as_smoothbp_re_fraction(advice)`.
+#'   \eqn{\delta_j = \sqrt{\text{prior\_frac}_j}}.
 #'   Print and plot methods included.
 #'
-#' @seealso [as_smoothbp_re_fraction()]
 #' @export
 smoothbp_advisor <- function(fit,
                               n_draws      = 200L,
@@ -257,12 +255,6 @@ print.fibr_smoothbp_advice <- function(x, digits = 3L, ...) {
     }
   }
 
-  if (any(sapply(x$breakpoints, function(bp) any(bp$delta > 0 & bp$delta < 1)))) {
-    cat("Per-group partial-NC fractions (delta) are available.\n")
-    cat("Pass to smoothbp via:\n")
-    cat("  fit_nc <- smoothbp(..., re_fraction = as_smoothbp_re_fraction(advice))\n\n")
-  }
-
   invisible(x)
 }
 
@@ -271,48 +263,6 @@ plot.fibr_smoothbp_advice <- function(x, ...) {
   p <- .plot_sbp_advice(x)
   print(p)
   invisible(p)
-}
-
-#' Convert smoothbp advisor output to re_fraction format
-#'
-#' Extracts the per-group, per-breakpoint NC mixing fractions (`delta`) from a
-#' `fibr_smoothbp_advice` object and returns them in the list format expected
-#' by the `re_fraction` argument of [smoothbp::smoothbp()] and
-#' [smoothbp::smoothbp_ss()].
-#'
-#' The returned list has one element per breakpoint that has omega random
-#' effects.  Each element is a named numeric vector of `delta` values in
-#' \eqn{[0, 1]}, one per group.  Groups with `delta > threshold` will use the
-#' non-centred parameterisation; others use centred.  The threshold is applied
-#' inside the smoothbp sampler (default 0.5).
-#'
-#' @param advice A `fibr_smoothbp_advice` object returned by
-#'   [smoothbp_advisor()].
-#' @param ... Unused.
-#'
-#' @return A named list of numeric vectors, compatible with
-#'   `smoothbp(..., re_fraction = ...)`.
-#'
-#' @examples
-#' \dontrun{
-#' advice  <- smoothbp_advisor(fit)
-#' re_frac <- as_smoothbp_re_fraction(advice)
-#' fit_nc  <- smoothbp(..., re_fraction = re_frac)
-#' }
-#'
-#' @export
-as_smoothbp_re_fraction <- function(advice, ...) UseMethod("as_smoothbp_re_fraction")
-
-#' @rdname as_smoothbp_re_fraction
-#' @export
-as_smoothbp_re_fraction.fibr_smoothbp_advice <- function(advice, ...) {
-  out <- lapply(advice$breakpoints, function(bp) {
-    d <- bp$delta
-    names(d) <- sub(paste0("omega", bp$breakpoint, "_re_"), "", bp$re_vars)
-    d
-  })
-  names(out) <- paste0("breakpoint_", sapply(advice$breakpoints, `[[`, "breakpoint"))
-  out
 }
 
 # ── Internal helpers ──────────────────────────────────────────────────────────

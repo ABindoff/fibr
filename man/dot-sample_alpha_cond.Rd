@@ -23,6 +23,8 @@ J-vector of \eqn{\alpha_j} draws.
 For each group \eqn{j}, evaluates the per-group conditional log-density
 \eqn{l_j(\alpha_j)} on a 400-point equally-spaced grid
 \eqn{[m_j - 6s_j,\; m_j + 6s_j]}, normalises to a PMF, and draws one
-sample by inverse-CDF.
+sample by inverse-CDF with linear interpolation within each grid cell.
+Linear interpolation removes the \eqn{O(\delta)} left-endpoint bias that
+arises from treating the discrete PMF as a step-function CDF.
 }
 \keyword{internal}
