@@ -112,7 +112,9 @@
 #' For each group \eqn{j}, evaluates the per-group conditional log-density
 #' \eqn{l_j(\alpha_j)} on a 400-point equally-spaced grid
 #' \eqn{[m_j - 6s_j,\; m_j + 6s_j]}, normalises to a PMF, and draws one
-#' sample by inverse-CDF.
+#' sample by inverse-CDF with linear interpolation within each grid cell.
+#' Linear interpolation removes the \eqn{O(\delta)} left-endpoint bias that
+#' arises from treating the discrete PMF as a step-function CDF.
 #'
 #' @param theta     2-vector \eqn{(\mu, \log\sigma)}.
 #' @param beta      K-vector.
@@ -146,7 +148,25 @@
     cdf  <- cumsum(prob)
     u    <- runif(1L)
     k    <- which(cdf >= u)
-    alpha_out[j] <- if (length(k) > 0L) a_grid[k[1L]] else a_grid[400L]
+
+    if (length(k) == 0L) {
+      alpha_out[j] <- a_grid[400L]
+    } else {
+      k_star <- k[1L]
+      if (k_star <= 1L) {
+        alpha_out[j] <- a_grid[1L]
+      } else {
+        # linear interpolation within cell [a_grid[k-1], a_grid[k]]
+        p_lo  <- cdf[k_star - 1L]
+        denom <- cdf[k_star] - p_lo
+        if (denom < 1e-15) {
+          alpha_out[j] <- a_grid[k_star - 1L]
+        } else {
+          alpha_out[j] <- a_grid[k_star - 1L] +
+            (a_grid[k_star] - a_grid[k_star - 1L]) * (u - p_lo) / denom
+        }
+      }
+    }
   }
 
   alpha_out
