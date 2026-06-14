@@ -15,6 +15,8 @@ Description: Detects non-trivial holonomy in Markov chain Monte Carlo chains
     loops. This geometric obstruction to mixing is invisible to standard
     diagnostics such as R-hat, effective sample size, and divergence counts.
 License: MIT + file LICENSE
+URL: https://github.com/ABindoff/fibr, https://doi.org/10.5281/zenodo.20687656
+BugReports: https://github.com/ABindoff/fibr/issues
 Encoding: UTF-8
 LazyData: false
 Roxygen: list(markdown = TRUE)
