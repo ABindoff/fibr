@@ -69,13 +69,13 @@ holonomy_diagnostic <- function(chain,
   weights   <- match.arg(weights)
   structure <- match.arg(structure)
 
-  # ── Split into per-chain matrices ────────────────────────────────────────────
+  # -- Split into per-chain matrices --------------------------------------------
   chains <- .split_chains(chain)   # list of matrices, one per chain
 
   .check_vars(chains[[1L]], base_vars,  "base_vars")
   .check_vars(chains[[1L]], fiber_vars, "fiber_vars")
 
-  # ── Detect loops per chain, pool results ─────────────────────────────────────
+  # -- Detect loops per chain, pool results -------------------------------------
   message("fibr: detecting loops in base space...")
   offsets   <- c(0L, cumsum(vapply(chains, nrow, integer(1L))))
   all_loops <- vector("list", length(chains))
@@ -90,7 +90,7 @@ holonomy_diagnostic <- function(chain,
       lp$end   <- lp$end   + offsets[c_idx]
       lp
     }, error = function(e) {
-      message(sprintf("fibr:   chain %d — %s", c_idx, conditionMessage(e)))
+      message(sprintf("fibr:   chain %d -- %s", c_idx, conditionMessage(e)))
       NULL
     })
   }
@@ -110,20 +110,20 @@ holonomy_diagnostic <- function(chain,
   message(sprintf("fibr: found %d loop pairs across %d chain(s)",
                   nrow(loops), sum(non_null)))
 
-  # ── Pool all chains into one matrix ──────────────────────────────────────────
+  # -- Pool all chains into one matrix ------------------------------------------
   full_mat   <- do.call(rbind, chains)
   full_base  <- full_mat[, base_vars,  drop = FALSE]
   full_fiber <- full_mat[, fiber_vars, drop = FALSE]
 
-  # ── Residualise fiber against base ───────────────────────────────────────────
-  # Removes the linear base→fiber effect (e.g. alpha ~ mu in a centred GLMM),
+  # -- Residualise fiber against base -------------------------------------------
+  # Removes the linear base->fiber effect (e.g. alpha ~ mu in a centred GLMM),
   # isolating the vertical fiber component where holonomy lives.
   if (residualize_fiber) {
     message("fibr: residualising fiber against base...")
     full_fiber <- .residualize(full_fiber, full_base)
   }
 
-  # ── Estimate transport map ───────────────────────────────────────────────────
+  # -- Estimate transport map ---------------------------------------------------
   message(sprintf("fibr: estimating transport map (n_bootstrap = %d)...", n_bootstrap))
   tm <- estimate_transport_map(full_fiber, loops,
                                n_bootstrap = n_bootstrap,
@@ -149,7 +149,7 @@ holonomy_diagnostic <- function(chain,
   )
 }
 
-# ── Internal helpers ──────────────────────────────────────────────────────────
+# -- Internal helpers ----------------------------------------------------------
 
 # Returns a list of plain matrices, one per chain.
 .split_chains <- function(chain) {
@@ -179,7 +179,7 @@ holonomy_diagnostic <- function(chain,
 }
 
 # OLS residuals of fiber against base (with intercept).
-# Removes linear base→fiber dependence; result has ~zero column means.
+# Removes linear base->fiber dependence; result has ~zero column means.
 .residualize <- function(fiber_mat, base_mat) {
   X    <- cbind(1, base_mat)
   beta <- solve(crossprod(X), crossprod(X, fiber_mat))

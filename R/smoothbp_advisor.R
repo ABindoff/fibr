@@ -17,10 +17,10 @@
 #'       \!\!\!\left(\frac{\partial\mu_i}{\partial\omega_{k,i}}\right)^{\!2}}
 #'
 #' \itemize{
-#'   \item `prior_frac` \eqn{\to 1}: prior dominates — group changepoints are
+#'   \item `prior_frac` \eqn{\to 1}: prior dominates -- group changepoints are
 #'     poorly identified from data relative to the shrinkage prior.  The sampler
 #'     is in the funnel regime and non-centred reparameterisation would help.
-#'   \item `prior_frac` \eqn{\to 0}: likelihood dominates — centred
+#'   \item `prior_frac` \eqn{\to 0}: likelihood dominates -- centred
 #'     parameterisation is efficient and mixing should be adequate.
 #'   \item Mixed: flag individual groups for attention.
 #' }
@@ -37,19 +37,19 @@
 #' This activates the non-centred HMC parameterisation in the Rust sampler:
 #' `z[j] = beta_om[j] / sigma_re_om[k]` is sampled with an `N(0,1)` prior,
 #' and `beta_om[j] = z[j] * sigma_re_om[k]` is reconstructed automatically.
-#' The `sigma_re_om` Gibbs step and the stored draws are unchanged — output
+#' The `sigma_re_om` Gibbs step and the stored draws are unchanged -- output
 #' is in the original (centred) parameterisation for easy interpretation.
 #'
 #' Additional options if `reparameterise = "omega"` is insufficient:
 #' \enumerate{
 #'   \item Increase `warmup` and `iter`.
-#'   \item Check `fit$n_divergent` — many divergences confirm a remaining funnel.
+#'   \item Check `fit$n_divergent` -- many divergences confirm a remaining funnel.
 #'   \item Fix the changepoint for poorly-identified groups using
 #'     `omega = list(fixed(value))`.
 #' }
 #'
 #' The `prior_frac` values quantify the severity: values above 0.8 indicate a
-#' serious funnel; 0.6–0.8 suggests moderate difficulty worth addressing.
+#' serious funnel; 0.6-0.8 suggests moderate difficulty worth addressing.
 #'
 #' The gradient is computed analytically from the sigmoid smooth-transition
 #' likelihood:
@@ -101,7 +101,7 @@ smoothbp_advisor <- function(fit,
     sub("^omega([0-9]+)_re_.*", "\\1", re_om_vars)
   )))
 
-  # ── Subsample draws ───────────────────────────────────────────────────────
+  # -- Subsample draws -------------------------------------------------------
   draws_mat <- as.matrix(posterior::as_draws_matrix(fit$draws))
   n_sub     <- min(as.integer(n_draws), nrow(draws_mat))
   sub_draws <- draws_mat[sort(sample.int(nrow(draws_mat), n_sub)), , drop = FALSE]
@@ -110,7 +110,7 @@ smoothbp_advisor <- function(fit,
   N   <- length(tau)
   dm  <- fit$dm
 
-  # ── Compute prior_frac per breakpoint ────────────────────────────────────
+  # -- Compute prior_frac per breakpoint ------------------------------------
   bp_results <- Filter(Negate(is.null), lapply(k_vals, function(k) {
 
     X_om_k   <- dm$X_om[[k]]
@@ -132,20 +132,20 @@ smoothbp_advisor <- function(fit,
     pf_mat <- matrix(NA_real_, n_sub, length(re_cols),
                      dimnames = list(NULL, re_var_names))
 
-    # ── Fully vectorised: extract all draws at once ────────────────────────
+    # -- Fully vectorised: extract all draws at once ------------------------
     .cv <- function(prefix, cols) paste0(prefix, cols)
 
     sigma_vec    <- sub_draws[, "sigma",      drop = TRUE]
     sigma_re_vec <- sub_draws[, sigma_re_var, drop = TRUE]
 
-    # Beta draw matrices: n_sub × p_k — use matrix multiplication on all draws
+    # Beta draw matrices: n_sub x p_k -- use matrix multiplication on all draws
     .bdraw <- function(prefix, cols, X, gamma_prefix = NULL) {
-      B <- sub_draws[, .cv(prefix, cols), drop = FALSE]  # n_sub × p
+      B <- sub_draws[, .cv(prefix, cols), drop = FALSE]  # n_sub x p
       if (!is.null(gamma_prefix)) {
         G <- .sbp_gamma_mat(sub_draws, gamma_prefix, cols)
         if (!is.null(G)) B <- B * (G > 0.5)
       }
-      B %*% t(X)   # n_sub × N
+      B %*% t(X)   # n_sub x N
     }
 
     omega_all <- .bdraw(paste0("omega",  k, "_"), col_om,  X_om_k)
@@ -155,14 +155,14 @@ smoothbp_advisor <- function(fit,
     b1_all    <- .bdraw("b1_",                    col_b1,  dm$X_b1,
                         gamma_prefix = "gamma_b1_")
 
-    # Vectorised dmu/domega: n_sub × N
+    # Vectorised dmu/domega: n_sub x N
     tau_mat <- matrix(tau, n_sub, N, byrow = TRUE)
     d_all   <- tau_mat - omega_all
     s_all   <- plogis(d_all * rho_all)
     dmu_all <- -(delta_all * s_all * (1 + d_all * rho_all * (1 - s_all)))
     if (k == 1L) dmu_all <- dmu_all - b1_all  # b1 term for first breakpoint
 
-    # G_prior and G_lik for each RE group — all draws at once
+    # G_prior and G_lik for each RE group -- all draws at once
     G_prior_vec <- 1 / sigma_re_vec^2     # n_sub
 
     valid <- is.finite(sigma_vec) & sigma_vec > 0 &
@@ -170,7 +170,7 @@ smoothbp_advisor <- function(fit,
 
     for (ji in seq_along(re_cols)) {
       grp_mask <- X_om_k[, re_cols[ji]] == 1L           # N-vector
-      # rowSums over group observations: n_sub × n_grp -> n_sub
+      # rowSums over group observations: n_sub x n_grp -> n_sub
       G_lik_vec <- rowSums(dmu_all[, grp_mask, drop = FALSE]^2,
                            na.rm = TRUE) / sigma_vec^2  # n_sub
       pf <- G_prior_vec / (G_prior_vec + G_lik_vec)
@@ -205,7 +205,7 @@ smoothbp_advisor <- function(fit,
             class = "fibr_smoothbp_advice")
 }
 
-# ── S3 methods ────────────────────────────────────────────────────────────────
+# -- S3 methods ----------------------------------------------------------------
 
 #' @export
 print.fibr_smoothbp_advice <- function(x, digits = 3L, ...) {
@@ -240,7 +240,7 @@ print.fibr_smoothbp_advice <- function(x, digits = 3L, ...) {
     n_tot <- length(bp$recommendation)
 
     if (n_ok == n_tot) {
-      cat("\nSampling geometry OK — centred parameterisation is efficient.\n\n")
+      cat("\nSampling geometry OK -- centred parameterisation is efficient.\n\n")
     } else {
       severity <- if (n_nc == n_tot) "all groups" else
                   sprintf("%d of %d groups", n_nc, n_tot)
@@ -265,7 +265,7 @@ plot.fibr_smoothbp_advice <- function(x, ...) {
   invisible(p)
 }
 
-# ── Internal helpers ──────────────────────────────────────────────────────────
+# -- Internal helpers ----------------------------------------------------------
 
 # Reconstruct per-observation linear predictor from a single draw row
 # (named numeric vector). Used directly in tests.
@@ -340,7 +340,7 @@ plot.fibr_smoothbp_advice <- function(x, ...) {
       title    = "smoothbp parameterisation advisor",
       subtitle = paste0("Red line = non-centred threshold (", x$threshold_nc,
                         ");  blue line = centred-OK threshold (", x$threshold_c, ")"),
-      x        = "Breakpoint × group",
+      x        = "Breakpoint x group",
       y        = "prior_frac  (prior / total Fisher information)",
       fill     = NULL
     ) +

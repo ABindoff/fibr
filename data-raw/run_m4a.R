@@ -245,8 +245,8 @@ for (n_j in NJ_GRID) {
                 seed            = cell_seed,
                 refresh         = 0L
               )
-              drws   <<- fit$draws()
-              n_grad <<- sum(fit$sampler_diagnostics()[, , "n_leapfrog__"])
+              drws   <- fit$draws()
+              n_grad <- sum(fit$sampler_diagnostics()[, , "n_leapfrog__"])
             } else if (method == "partial_nc") {
               if (is.null(geom)) stop("no geometry")
               fit <- mod_partial_nc$sample(
@@ -258,36 +258,36 @@ for (n_j in NJ_GRID) {
                 seed            = cell_seed,
                 refresh         = 0L
               )
-              drws   <<- fit$draws()
-              n_grad <<- sum(fit$sampler_diagnostics()[, , "n_leapfrog__"])
+              drws   <- fit$draws()
+              n_grad <- sum(fit$sampler_diagnostics()[, , "n_leapfrog__"])
             } else if (method == "asis") {
-              drws <<- asis_mcmc(stan_data,
+              drws <- asis_mcmc(stan_data,
                 n_iter = spec$n_iter, n_warmup = spec$n_warmup,
                 n_chains = N_CHAINS, seed = cell_seed, verbose = FALSE)
-              n_grad <<- N_CHAINS * (spec$n_warmup + spec$n_iter) * 3L
+              n_grad <- N_CHAINS * (spec$n_warmup + spec$n_iter) * 3L
             } else if (method == "m2a_conditional") {
-              drws <<- horizontal_mcmc(stan_data,
+              drws <- horizontal_mcmc(stan_data,
                 transport = "conditional",
                 n_iter = spec$n_iter, n_warmup = spec$n_warmup,
                 n_chains = N_CHAINS, seed = cell_seed, verbose = FALSE)
-              n_grad <<- N_CHAINS * (spec$n_warmup + spec$n_iter) * 1L
+              n_grad <- N_CHAINS * (spec$n_warmup + spec$n_iter) * 1L
             } else if (method == "m2b_reparam") {
-              drws <<- horizontal_hmc(stan_data,
+              drws <- horizontal_hmc(stan_data,
                 transport = "reparam", L = spec$L,
                 n_iter = spec$n_iter, n_warmup = spec$n_warmup,
                 n_chains = N_CHAINS, seed = cell_seed, verbose = FALSE)
-              n_grad <<- N_CHAINS * (spec$n_warmup + spec$n_iter) * spec$L
+              n_grad <- N_CHAINS * (spec$n_warmup + spec$n_iter) * spec$L
             } else if (method == "riemannian") {
-              drws <<- riemannian_mcmc(stan_data,
+              drws <- riemannian_mcmc(stan_data,
                 n_iter = spec$n_iter, n_warmup = spec$n_warmup,
                 n_chains = N_CHAINS, L = spec$L,
                 seed = cell_seed, verbose = FALSE)
-              n_grad <<- N_CHAINS * (spec$n_warmup + spec$n_iter) * spec$L
+              n_grad <- N_CHAINS * (spec$n_warmup + spec$n_iter) * spec$L
             } else if (method == "m2c_marginal") {
-              drws <<- marginal_mcmc(stan_data,
+              drws <- marginal_mcmc(stan_data,
                 n_iter = spec$n_iter, n_warmup = spec$n_warmup,
                 n_chains = N_CHAINS, seed = cell_seed, verbose = FALSE)
-              n_grad <<- N_CHAINS * (spec$n_warmup + spec$n_iter) * J * GH_NODES
+              n_grad <- N_CHAINS * (spec$n_warmup + spec$n_iter) * J * GH_NODES
             }
             proc.time()[["elapsed"]] - t0
           }, error = function(e) {

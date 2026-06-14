@@ -2,3 +2,6 @@
 ^\.Rproj\.user$
 ^\.positai$
 ^\.claude$
+^\.repro$
+^inst/stan/.*\.exe$
+^inst/stan/.*\.hpp$

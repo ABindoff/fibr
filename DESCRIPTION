@@ -1,7 +1,7 @@
 Package: fibr
 Type: Package
 Title: Holonomy Diagnostics for Hierarchical MCMC
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R:
     person("Aidan D", "Bindoff",
            email   = "aidan.bindoff@utas.edu.au",

@@ -169,29 +169,34 @@ hd <- holonomy_diagnostic(
   chain             = draws_c,
   base_vars         = base_vars,
   fiber_vars        = fiber_vars,
-  min_gap           = 3L,          # within the autocorrelation time
+  min_gap           = 50L,         # past the base IACT so autocorrelation is weak
   n_bootstrap       = 100L,
+  structure         = "diagonal",  # per-group contraction factors h_j (default)
   residualize_fiber = TRUE         # remove linear base→fiber trend first
 )
 print(hd)
 ```
 
-```{r holonomy-plot, eval = exists("draws_c"), fig.cap = "Eigenspectrum of the transport map H at min_gap = 3.  The dominant eigenvalue near 0.26 reflects fiber memory: after 3 MCMC steps where the base returns, the residualised alpha retains ~26% of its starting value."}
+```{r holonomy-plot, eval = exists("draws_c"), fig.cap = "Per-group transport factors h_j with 90% bootstrap intervals at min_gap = 50.  Groups with h_j elevated above zero retain loop-conditional fiber dependence at this lag, indicating that their alpha parameters co-move with the hyperparameters even after controlling for linear base-to-fiber trend."}
 plot(hd)
 ```
 
-**Interpreting the eigenspectrum.** The dominant eigenvalue $\lambda_1$ near
-the real axis, pulled away from the identity point ($+$ on the unit circle),
-tells us that the fiber has memory of its starting position after a short
-base-space loop.  For a *flat* connection (non-centred parameterisation) this
-would be near zero — there is no memory because $\tilde\alpha = (\alpha-\mu)/\sigma$
-is independent of $(\mu,\sigma)$.
+**Interpreting the per-group factors.** `holonomy_diagnostic()` with
+`structure = "diagonal"` returns one real contraction factor $\hat{h}_j$
+per group.
+A value near zero means that, at the chosen lag, the residualised $\alpha_j$
+at the end of a base-space loop is essentially independent of its starting
+value — well-mixed at this time-scale.
+An elevated $\hat{h}_j$ means that the fiber coordinate retains memory of
+where it started, conditional on the hyperparameters returning: the
+connection is leaving a footprint in the chain.
 
-What `holonomy_diagnostic()` is strictly measuring is **statistical fiber
-memory** — the autocorrelation structure of $\alpha$ residuals conditional on
-the base returning.  For a perfect MCMC sampler this would equal the
-geometric holonomy; in practice it also contains a baseline from MCMC
-dynamics.  The next milestone separates these two contributions.
+The chosen `min_gap = 50` is deliberately past the base IACT so that
+ordinary lag autocorrelation has decayed; surviving signal at this gap is
+the candidate geometric component.
+The analytic prior fraction $\hat{\pi}_j$ (Milestone 2) predicts which
+groups should show elevated $\hat{h}_j$: prior-dominated groups
+($\hat{\pi}_j \to 1$) carry the strongest coupling.
 
 ---
 
@@ -385,7 +390,7 @@ it.
 
 | Tool | What it tells you | Action |
 |---|---|---|
-| `holonomy_diagnostic()` | Statistical fiber memory (λ₁ at short lags) | High λ₁ → parameterisation or sampler improvement needed |
+| `holonomy_diagnostic()` | Per-group transport factors h_j (diagonal, past IACT) | Elevated h_j → that group's fiber coupling needs attention |
 | `compute_connection()` | Analytic coupling strength A, curvature F, prior_frac | prior_frac → 1: prior coupling dominates |
 | `smoothbp_advisor()` | Which changepoint RE groups are funnel-regime | Re-fit with `reparameterise = "omega"` |
 

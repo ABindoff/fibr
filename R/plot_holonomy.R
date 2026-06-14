@@ -94,7 +94,7 @@ plot.fibr_holonomy <- function(x, type = NULL, ...) {
   invisible(p)
 }
 
-# ── Internal plot helpers ─────────────────────────────────────────────────────
+# -- Internal plot helpers -----------------------------------------------------
 
 .plot_contraction <- function(x) {
   if (!identical(x$structure, "diagonal")) {
@@ -164,7 +164,7 @@ plot.fibr_holonomy <- function(x, type = NULL, ...) {
     coord_equal() +
     labs(
       title    = "Holonomy eigenspectrum",
-      subtitle = sprintf("||H − I||_F = %.4f  |  %d loops  |  J = %d",
+      subtitle = sprintf("||H - I||_F = %.4f  |  %d loops  |  J = %d",
                          x$frobenius_dev, x$n_loops, length(x$fiber_vars)),
       x        = expression(Re(lambda)),
       y        = expression(Im(lambda))
