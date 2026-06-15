@@ -34,6 +34,7 @@ manuscript2/
 # Handoff/planning documents
 HANDOFF*.md
 data-raw/HANDOFF*.md
+FIBR_BRIEFING.md
 
 # Large simulation output caches
 data-raw/simstud_draws/
