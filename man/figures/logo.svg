@@ -1,59 +1,54 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
   <defs>
-    <!-- 80s pastel gradient: pale rose to pale periwinkle -->
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FAEAF5"/>
       <stop offset="100%" stop-color="#E8EEFA"/>
     </linearGradient>
-
-    <!-- Arrowhead for the fibre vector -->
     <marker id="tip" viewBox="0 0 10 10" refX="8" refY="5"
             markerWidth="5" markerHeight="5" orient="auto">
       <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#38B8B0"/>
     </marker>
   </defs>
 
-  <!-- ── Hex body ─────────────────────────────────────────────────── -->
+  <!-- Hex body -->
   <polygon points="300,25 533,162 533,438 300,575 67,438 67,162"
-           fill="url(#bg)" stroke="#B888C8" stroke-width="18"
-           stroke-linejoin="round"/>
-
-  <!-- Thin inner border: 80s double-rule detail -->
+           fill="url(#bg)" stroke="#B888C8" stroke-width="18" stroke-linejoin="round"/>
   <polygon points="300,44 521,174 521,426 300,556 79,426 79,174"
            fill="none" stroke="#D8C0E8" stroke-width="3" opacity="0.85"/>
 
-  <!-- ── Integral spine  ('f' letterform as ∮) ───────────────────── -->
-  <!--  Top hook curves right (like the hook of 'f' / top serif of ∫),
-        then the spine descends with a gentle S through the Stokes loop,
-        finishing with a leftward curl below baseline (like ∫ bottom). -->
-  <path d="M 210,286
-           C 246,274 252,300 234,323
-           C 216,346 178,383 178,410
-           C 178,437 216,457 214,470
-           C 212,484 190,492 177,486"
+  <!-- 'f' as ∮
+       The stroke starts at the LEFT terminal, sweeps LEFT-UP-RIGHT-DOWN —
+       the standard 'f' gesture. This is opposite to '3' (which has both
+       bumps starting from the right). The ∮ circle sits at crossbar height
+       with the spine passing through its centre. Small leftward base curl
+       completes the ∫ character. -->
+  <path d="M 163,326
+           C 158,296 175,271 198,269
+           C 221,267 225,296 219,322
+           C 218,342 210,370 207,393
+           C 203,419 195,449 189,469
+           C 186,482 185,491 196,488"
         fill="none" stroke="#C84878" stroke-width="11"
         stroke-linecap="round" stroke-linejoin="round"/>
 
-  <!-- ── Stokes loop (the circle of ∮, doubles as crossbar of 'f') ─ -->
-  <circle cx="185" cy="410" r="34"
+  <!-- ∮ contour: circle centered on the downstroke -->
+  <circle cx="205" cy="393" r="37"
           fill="none" stroke="#C84878" stroke-width="8.5"/>
 
-  <!-- ── Fibre vector: exits the loop pointing upper-right ───────── -->
-  <!--  Starts at the circle edge at ~45° above horizontal (the
-        horizontal lift direction), represents the fibre component. -->
-  <line x1="211" y1="387" x2="271" y2="330"
+  <!-- Fibre vector: horizontal lift exiting the loop upper-right -->
+  <line x1="231" y1="366" x2="283" y2="314"
         stroke="#38B8B0" stroke-width="6.5" stroke-linecap="round"
         marker-end="url(#tip)"/>
 
-  <!-- ── "ibr" letterforms ────────────────────────────────────────── -->
-  <text x="241" y="472"
+  <!-- "ibr" -->
+  <text x="252" y="472"
         font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif"
         font-weight="800" font-size="140" fill="#3C2870"
         letter-spacing="-2">ibr</text>
 
-  <!-- ── 80s pastel accent diamonds (Memphis-style corner ornaments) -->
+  <!-- 80s Memphis corner diamonds -->
   <polygon points="104,212 115,228 104,244  93,228" fill="#F8C0D4" opacity="0.80"/>
   <polygon points="496,212 507,228 496,244 485,228" fill="#B8DCF0" opacity="0.80"/>
-  <polygon points="104,372 115,388 104,404  93,388" fill="#B8DCF0" opacity="0.80"/>
-  <polygon points="496,372 507,388 496,404 485,388" fill="#F8C0D4" opacity="0.80"/>
+  <polygon points="104,374 115,390 104,406  93,390" fill="#B8DCF0" opacity="0.80"/>
+  <polygon points="496,374 507,390 496,406 485,390" fill="#F8C0D4" opacity="0.80"/>
 </svg>
