@@ -12,11 +12,7 @@
 ^repomix-output.*$
 ^NOTES_.*\.md$
 ^PUBLICATION_ROADMAP\.md$
-^data-raw/.*\.log$
-^data-raw/.*\.py$
-^data-raw/.*\.tex$
-^data-raw/.*\.csv$
-^data-raw/.*\.json$
+^data-raw$
 ^FIBR_BRIEFING\.md$
 ^HANDOFF.*\.md$
 ^Rplots\.pdf$
