@@ -23,12 +23,12 @@
            C 178,330 177,350 177,370
            C 176,394 174,426 173,446
            C 172,460 168,474 160,470"
-        fill="none" stroke="#C84878" stroke-width="11"
+        fill="none" stroke="#3C2870" stroke-width="11"
         stroke-linecap="round" stroke-linejoin="round"/>
 
   <!-- ∮ contour -->
   <circle cx="177" cy="370" r="34"
-          fill="none" stroke="#C84878" stroke-width="8.5"/>
+          fill="none" stroke="#3C2870" stroke-width="8.5"/>
 
   <!-- Fibre vector -->
   <line x1="201" y1="346" x2="255" y2="291"
