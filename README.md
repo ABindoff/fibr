@@ -1,4 +1,4 @@
-# fibr
+# fibr <img src="man/figures/logo.svg" align="right" height="140" />
 
 Prior-fraction diagnostics and geometry-guided reparameterisation for hierarchical MCMC.
 

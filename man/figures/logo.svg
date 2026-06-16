@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="synthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9333ea" /> <stop offset="45%" stop-color="#2563eb" /> <stop offset="75%" stop-color="#06b6d4" /> <stop offset="100%" stop-color="#22d3ee" /> </linearGradient>
+
+    <linearGradient id="integralGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4c0519" />
+      <stop offset="100%" stop-color="#9d174d" />
+    </linearGradient>
+
+    <marker id="vectorArrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+    </marker>
+  </defs>
+
+  <style>
+    .lattice-edge { stroke: #1e3a8a; stroke-width: 1.5; opacity: 0.4; }
+    .lattice-node { fill: #1d4ed8; opacity: 0.7; }
+    .stokes-loop { fill: none; stroke: #4c0519; stroke-width: 2.5; opacity: 0.85; }
+    .projecting-vector { fill: none; stroke: #38bdf8; stroke-width: 4; stroke-linecap: round; }
+    .brand-text { font-family: 'Segoe UI', Arial, sans-serif; font-weight: 700; font-size: 80px; fill: #4c0519; letter-spacing: -1px; }
+  </style>
+
+  <polygon points="300,30 533.82,165 533.82,435 300,570 66.18,435 66.18,165"
+           fill="url(#synthGrad)" stroke="#1e1b4b" stroke-width="14" stroke-linejoin="round" />
+
+  <polygon points="300,42 523.43,171 523.43,429 300,558 76.57,429 76.57,171"
+           fill="none" stroke="#ffffff" stroke-width="2" opacity="0.25" />
+
+  <g id="geometry-mesh">
+    <line x1="300" y1="30" x2="300" y2="165" class="lattice-edge" />
+    <line x1="300" y1="165" x2="170" y2="220" class="lattice-edge" />
+    <line x1="300" y1="165" x2="430" y2="220" class="lattice-edge" />
+
+    <line x1="66.18" y1="165" x2="170" y2="220" class="lattice-edge" />
+    <line x1="533.82" y1="165" x2="430" y2="220" class="lattice-edge" />
+
+    <line x1="170" y1="220" x2="120" y2="340" class="lattice-edge" />
+    <line x1="430" y1="220" x2="480" y2="340" class="lattice-edge" />
+    <line x1="120" y1="340" x2="220" y2="420" class="lattice-edge" />
+    <line x1="480" y1="340" x2="380" y2="420" class="lattice-edge" />
+
+    <line x1="120" y1="340" x2="300" y2="350" class="lattice-edge" />
+    <line x1="480" y1="340" x2="300" y2="350" class="lattice-edge" />
+    <line x1="220" y1="420" x2="300" y2="350" class="lattice-edge" />
+    <line x1="380" y1="420" x2="300" y2="350" class="lattice-edge" />
+    <line x1="220" y1="420" x2="300" y2="570" class="lattice-edge" />
+    <line x1="380" y1="420" x2="300" y2="570" class="lattice-edge" />
+
+    <circle cx="300" cy="165" r="6" class="lattice-node" />
+    <circle cx="170" cy="220" r="6" class="lattice-node" />
+    <circle cx="430" cy="220" r="6" class="lattice-node" />
+    <circle cx="120" cy="340" r="6" class="lattice-node" />
+    <circle cx="480" cy="340" r="6" class="lattice-node" />
+    <circle cx="220" cy="420" r="6" class="lattice-node" />
+    <circle cx="380" cy="420" r="6" class="lattice-node" />
+    <circle cx="300" cy="350" r="5" class="lattice-node" />
+  </g>
+
+  <g id="stokes-integration">
+    <circle cx="295" cy="245" r="45" class="stokes-loop" stroke-dasharray="180 20" />
+    <path d="M 235,215 Q 255,235 250,265" fill="none" stroke="#4c0519" stroke-width="1" opacity="0.5" />
+    <path d="M 355,275 Q 335,255 340,225" fill="none" stroke="#4c0519" stroke-width="1" opacity="0.5" />
+
+    <line x1="327" y1="213" x2="370" y2="170" class="projecting-vector" marker-end="url(#vectorArrow)" />
+  </g>
+
+  <g id="integral-symbol">
+    <path d="M 350,130 C 360,105 315,95 315,125 C 315,165 275,285 275,320 C 275,355 310,345 290,370"
+          fill="none" stroke="url(#integralGrad)" stroke-width="22" stroke-linecap="round" />
+    <path d="M 350,130 C 360,105 315,95 315,125 C 315,165 275,285 275,320 C 275,355 310,345 290,370"
+          fill="none" stroke="#f43f5e" stroke-width="6" stroke-linecap="round" opacity="0.4" />
+  </g>
+
+  <text x="300" y="490" text-anchor="middle" class="brand-text">fibr</text>
+</svg>
