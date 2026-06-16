@@ -60,6 +60,8 @@
 #' }
 #'
 #' @export
+utils::globalVariables(c("n_plot", "group"))
+
 prior_fraction <- function(x, ...) UseMethod("prior_fraction")
 
 #' @describeIn prior_fraction Manual path for any model. Supply the per-coordinate
@@ -72,6 +74,8 @@ prior_fraction <- function(x, ...) UseMethod("prior_fraction")
 #' @export
 prior_fraction.default <- function(x, lik_information, labels = NULL, ...) {
   prior_precision <- as.numeric(x)
+  if (length(prior_precision) == 1L)
+    prior_precision <- rep(prior_precision, length(lik_information))
   if (length(prior_precision) != length(lik_information))
     stop("prior_fraction(): 'x' (prior precision) and 'lik_information' must ",
          "have the same length.")

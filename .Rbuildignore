@@ -3,9 +3,11 @@
 ^\.positai$
 ^\.claude$
 ^\.repro$
+^inst/stan$
 ^inst/stan/.*\.exe$
 ^inst/stan/.*\.hpp$
 ^fibr\.Rcheck$
+^paper$
 ^fibr_paper\..*
 ^repomix-output.*$
 ^NOTES_.*\.md$
@@ -14,4 +16,10 @@
 ^data-raw/.*\.py$
 ^data-raw/.*\.tex$
 ^data-raw/.*\.csv$
+^data-raw/.*\.json$
+^FIBR_BRIEFING\.md$
+^HANDOFF.*\.md$
+^Rplots\.pdf$
+^manuscript$
+^manuscript2$
 ^data-raw/.*\.json$

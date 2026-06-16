@@ -1,3 +1,5 @@
+utils::globalVariables(c("label", "rec", "q05", "q95"))
+
 #' Parameterisation advisor for smoothbp changepoint random effects
 #'
 #' @description
@@ -79,6 +81,7 @@
 #'   \eqn{\delta_j = \sqrt{\text{prior\_frac}_j}}.
 #'   Print and plot methods included.
 #'
+#' @importFrom stats plogis quantile
 #' @export
 smoothbp_advisor <- function(fit,
                               n_draws      = 200L,
