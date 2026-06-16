@@ -13,6 +13,7 @@
 ^NOTES_.*\.md$
 ^PUBLICATION_ROADMAP\.md$
 ^data-raw$
+^cran-comments\.md$
 ^FIBR_BRIEFING\.md$
 ^HANDOFF.*\.md$
 ^Rplots\.pdf$
