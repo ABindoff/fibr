@@ -36,9 +36,9 @@
         marker-end="url(#tip)"/>
 
   <!-- "ibr": baseline raised to y=420 so mid-height of letters ~y=371, level with circle -->
-  <text x="242" y="420"
+  <text x="225" y="420"
         font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif"
-        font-weight="800" font-size="140" fill="#3C2870"
+        font-weight="700" font-size="140" fill="#3C2870"
         letter-spacing="-2">ibr</text>
 
   <!-- 80s Memphis corner diamonds -->
