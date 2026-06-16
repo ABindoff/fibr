@@ -1,26 +1,27 @@
 Package: fibr
 Type: Package
-Title: Prior-Fraction Diagnostics and Geometry-Guided Reparameterisation for
-    Hierarchical MCMC
+Title: Prior-Fraction Diagnostics for Hierarchical Models
 Version: 0.1.0
 Authors@R:
     person("Aidan D", "Bindoff",
            email   = "aidan.bindoff@utas.edu.au",
            role    = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-0943-2702"))
-Description: Tools for diagnosing and remedying the centring/non-centring
-    obstruction in hierarchical Markov chain Monte Carlo, built on the fiber
-    bundle structure of the joint parameter space. The Fisher information
-    metric induces an Ehresmann connection on the base-fiber split; for the
-    centred logistic GLMM this connection is flat, so the obstruction is not
-    geometric holonomy but conditional dependence between base and fiber,
-    governed per group by the prior fraction (the classical shrinkage or
-    pooling factor). The package computes the analytic connection and prior
-    fraction, estimates per-group loop-conditional dependence from a posterior
-    chain, and supports per-group partial non-centring and connection-corrected
-    proposals. The apparent 'holonomy' seen when the fiber is held fixed is a
-    linearisation artifact. These pathologies are invisible to standard
-    diagnostics such as R-hat, effective sample size, and divergence counts.
+Description: Computes the prior fraction, the per-group pooling or shrinkage
+    factor, for hierarchical models, including directly from 'brms' fits. For
+    each group-level coefficient the prior fraction is the share of the
+    posterior precision contributed by the shrinkage prior relative to the
+    likelihood; values near one indicate a coefficient that is prior-dominated
+    (the centring/non-centring funnel regime), values near zero indicate a
+    likelihood-dominated coefficient that is well identified from the data.
+    These quantities are invisible to standard convergence diagnostics such as
+    R-hat and effective sample size, and they indicate where a non-centred
+    reparameterisation is likely to help. A companion advisor reports the same
+    decomposition for changepoint random effects fitted with 'smoothbp'. The
+    underlying geometry (the Fisher-metric connection on the base-fiber split,
+    for which this connection is flat so the obstruction is statistical rather
+    than geometric) is described in the accompanying paper; code reproducing the
+    paper is in the package's source repository.
 License: MIT + file LICENSE
 URL: https://github.com/ABindoff/fibr, https://doi.org/10.5281/zenodo.20687656
 BugReports: https://github.com/ABindoff/fibr/issues
@@ -32,16 +33,10 @@ Depends:
     R (>= 4.1.0)
 Imports:
     posterior (>= 1.4.0),
-    Matrix,
-    ggplot2,
-    FNN
+    ggplot2
 Suggests:
     brms,
+    smoothbp,
     cmdstanr,
-    deSolve,
-    patchwork,
-    testthat (>= 3.0.0),
-    knitr,
-    rmarkdown
+    testthat (>= 3.0.0)
 Config/testthat/edition: 3
-VignetteBuilder: knitr

@@ -1,6 +1,6 @@
 # fibr <img src="man/figures/logo.svg" align="right" height="140" />
 
-Prior-fraction diagnostics and geometry-guided reparameterisation for hierarchical MCMC.
+Prior-fraction diagnostics for hierarchical models.
 
 ## Overview
 
@@ -16,11 +16,15 @@ for each group-level coordinate: the share of that coordinate's posterior precis
 
 Coordinates with π_j near 1 are prior-dominated: their posteriors reflect regularisation toward the population mean rather than group-specific data. Coordinates with π_j near 0 are data-driven. The same quantity gives the per-group non-centring weight for partial reparameterisation.
 
-The package also provides a chain-level diagnostic (`holonomy_diagnostic`) that estimates base–fiber conditional dependence directly from MCMC output without assuming GLMM structure, and analytic connection/curvature functions for the centred logistic GLMM (`compute_connection`).
+The installed package is deliberately small: `prior_fraction()` (with a `brms` method) and the `smoothbp_advisor()` companion. The geometry that motivates it — the analytic connection, curvature, the chain-level coupling diagnostic, and the experimental connection-corrected samplers — is reproduction code for the paper and lives in the source repository's [`paper/`](paper/) directory rather than in the installed package, because the paper proves this connection is flat (so those quantities are statistical, not a user-facing geometric diagnostic).
 
 ## Installation
 
 ```r
+# from CRAN (once available)
+install.packages("fibr")
+
+# or the development version
 # install.packages("remotes")
 remotes::install_github("ABindoff/fibr")
 ```
@@ -60,41 +64,26 @@ prior_fraction(1 / sigma_re^2, lik_information = n_obs / sigma_y^2)
 
 This path works for Stan, JAGS, or any other fitting engine. The helper `fibr:::.glm_information()` computes per-observation Fisher weights from the linear predictor for the supported GLM families.
 
-### Analytic connection (centred logistic GLMM)
+### Reproducing the paper
+
+The analytic connection, curvature, chain-level coupling diagnostic, and the
+connection-corrected samplers are not part of the installed package. They live in
+[`paper/R/`](paper/R) and are loaded with:
 
 ```r
-# chain is a posterior::draws_array from the centred Stan model
-conn <- compute_connection(
-  chain      = chain,
-  base_vars  = c("mu", "sigma"),
-  fiber_vars = paste0("alpha[", 1:J, "]"),
-  method     = "analytic_glmm",
-  stan_data  = stan_data
-)
-print(conn)   # per-group A[j,mu], A[j,sigma], linearised curvature, π_j
-plot(conn)
+source("paper/setup.R")   # run from the repository root
 ```
 
-### Chain-level holonomy diagnostic
-
-```r
-hd <- holonomy_diagnostic(
-  chain      = chain,
-  base_vars  = c("mu", "sigma"),
-  fiber_vars = paste0("alpha[", 1:J, "]"),
-  min_gap    = 50
-)
-print(hd)
-plot(hd)   # eigenvalue spectrum of the estimated transport map
-```
-
-`holonomy_diagnostic` detects loops in base-space (hyperparameter) trajectory and estimates the conditional dependence of the fiber at matched loop endpoints. Eigenvalues of the transport map near 1 indicate coupling; the magnitude tracks π_j in prior-dominated groups.
+after which `compute_connection()`, `holonomy_diagnostic()`, and the samplers are
+available, and the scripts in `data-raw/` regenerate the paper's figures. See
+[`paper/README.md`](paper/README.md). This route needs the heavier dependencies
+(Matrix, FNN, deSolve, patchwork, a Stan backend) that the CRAN package does not.
 
 ## Background
 
 The joint parameter space of a two-level hierarchical model — hyperparameters (μ, σ) as the base, group parameters (α₁, …, α_J) as the fibers — carries a fiber bundle structure. The Fisher information metric induces an Ehresmann connection A = −G_FF⁻¹ G_BF on this bundle. A natural conjecture is that the centring obstruction arises from the curvature of this connection, manifesting as holonomy when the hyperparameters traverse a closed loop.
 
-The companion paper proves this false for any smooth hierarchical posterior: the connection is flat, its horizontal leaves being the level sets of the fiber score ∂_α log p, so no geometric obstruction exists above the metric level. The non-zero curvature seen when integrating the *linearised* (fiber-frozen) connection is an artefact of that approximation; numerical verification is in `data-raw/verify_flat_connection.R` and `tests/testthat/test-connection.R`.
+The companion paper proves this false for any smooth hierarchical posterior: the connection is flat, its horizontal leaves being the level sets of the fiber score ∂_α log p, so no geometric obstruction exists above the metric level. The non-zero curvature seen when integrating the *linearised* (fiber-frozen) connection is an artefact of that approximation; numerical verification is in `data-raw/verify_flat_connection.R` and `paper/tests/test-connection.R`.
 
 What remains is statistical: the conditional dependence of fiber on base, governed per group by π_j. Genuine curvature — including rotational holonomy — does appear for connections built from a sampler's working metric (a fixed mass matrix) rather than the true Hessian, making holonomy an algorithmic rather than geometric phenomenon in that setting.
 

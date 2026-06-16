@@ -73,6 +73,24 @@ information at the posterior mean, and returns the per-coordinate prior
 fraction. Requires \pkg{brms}.
 
 }}
+\examples{
+## Manual path (no model fit needed): supply the per-coordinate prior
+## precision (1/sigma^2) and likelihood information (sum of per-observation
+## Fisher information). This is the closed-form GLMM prior fraction.
+sigma <- 1.5
+lik   <- c(0.2, 1.0, 5.0)          # e.g. sum p(1-p) for three groups
+prior_fraction(1 / sigma^2, lik_information = lik)
+
+\dontrun{
+## brms path: which group-level estimates are prior-dominated?
+library(brms)
+fit <- brm(count ~ 1 + (1 | site), data = my_data, family = poisson())
+pf  <- prior_fraction(fit)
+pf                                  # summary: how many coordinates have pi > 0.8
+plot(pf)                            # pi vs. number of observations
+}
+
+}
 \references{
 Gelman and Pardoe (2006), \emph{Technometrics} 48(2):241--251.
 Betancourt and Girolami (2015), in \emph{Current Trends in Bayesian
