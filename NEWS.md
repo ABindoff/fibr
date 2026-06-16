@@ -1,30 +1,23 @@
 # fibr 0.1.0
 
-First release, accompanying the arXiv preprint
-"The Footprint of the Connection: Fiber Bundle Geometry and Conditional
-Autocorrelation in Hierarchical MCMC" (Bindoff, 2026).
+Initial CRAN release.
 
 ## New features
 
-- `holonomy_diagnostic()` gains `structure = c("diagonal", "full")` argument.
-  The default `"diagonal"` returns per-group real contraction factors `h_j`
-  (group-aligned, interpretable directly against `pi_j`), replacing the
-  full J×J complex transport matrix.  The old `"full"` behaviour is retained.
-- `plot.fibr_holonomy()` gains `type = "contraction"` (default for diagonal
-  fits), showing per-group `h_j` with bootstrap intervals.
-- `compute_connection()` now errors loudly if the sigma column contains
-  non-positive values (catches accidental log-sigma inputs).
-- `as_smoothbp_re_fraction()` removed (orphaned by smoothbp 0.2.4 decoupling).
+- `prior_fraction()` computes the per-group prior fraction (pooling or
+  shrinkage factor) for hierarchical models. Accepts a `brmsfit` object
+  directly, or a manual path supplying prior precision and likelihood
+  information for any other fitting engine (Stan, JAGS, etc.).
+  Supports gaussian, bernoulli, binomial, poisson, and negbinomial families.
+  Has `print` and `plot` methods.
 
-## Bug fixes
+- `smoothbp_advisor()` reports the same Fisher information decomposition for
+  changepoint random effects in `smoothbp` fits, and recommends centred vs.
+  non-centred parameterisation per group. Has `print` and `plot` methods.
 
-- `estimate_transport_map()` with `structure = "diagonal"` now preserves
-  group identity so that `h_j` can be compared with per-group analytic
-  quantities.
+## Notes
 
-## Internal
-
-- SBC validation battery added for the conditional-transport, reparam-HMC,
-  and marginal samplers (M3).
-- M4a relative-efficiency benchmark (1280-cell, 8-method) added under
-  `data-raw/run_m4a.R`.
+The underlying geometry (analytic connection, curvature, chain-level coupling
+diagnostic, and experimental samplers) is reproduction code for the companion
+paper and lives in the source repository's `paper/` directory rather than in
+the installed package.
