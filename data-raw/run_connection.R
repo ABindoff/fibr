@@ -92,6 +92,8 @@ for (r in radii) {
 
 cat("\n── 4. Holonomy vs loop radius ────────────────────────────────────────────\n")
 
+library(patchwork)
+
 # Use small to moderate radii (beyond ~0.3 the linearised Stokes diverges)
 r_grid <- seq(0.02, 0.30, by = 0.02)
 df_curve <- do.call(rbind, lapply(r_grid, function(r) {
@@ -100,32 +102,57 @@ df_curve <- do.call(rbind, lapply(r_grid, function(r) {
     radius      = r,
     group       = factor(res$j),
     H_numerical = res$H_numerical,
-    H_stokes    = res$H_stokes
+    H_stokes    = res$H_stokes,
+    residual    = res$H_numerical - res$H_stokes
   )
 }))
 
 cat("Holonomy vs radius (per group):\n")
 print(df_curve, row.names = FALSE, digits = 4)
 
-p_curve <- ggplot(df_curve, aes(x = radius, colour = group)) +
+col_scale <- scale_colour_viridis_d(option = "turbo", name = "Group j")
+
+# ── Top panel: H_j (both methods) vs radius ───────────────────────────────────
+p_top <- ggplot(df_curve, aes(x = radius, colour = group)) +
   geom_vline(xintercept = 0.20, linetype = "dashed", colour = "grey70") +
-  geom_line(aes(y = H_stokes), linewidth = 0.7) +
+  geom_hline(yintercept = 1,    linetype = "dotted", colour = "grey50") +
+  geom_line(aes(y = H_stokes),    linewidth = 0.7) +
   geom_point(aes(y = H_numerical), size = 1.8, shape = 16) +
-  geom_hline(yintercept = 1, linetype = "dotted", colour = "grey50") +
   annotate("text", x = 0.20, y = Inf, label = "r = 0.20",
            hjust = -0.1, vjust = 1.5, size = 3.2, colour = "grey50") +
-  scale_colour_viridis_d(option = "turbo", name = "Group j") +
+  col_scale +
   labs(
-    title    = "Holonomy vs loop radius — GLMM centred parameterisation",
-    subtitle = "Lines: Stokes  H = 1 + Fⱼ·πr²/α₀ⱼ  |  Points: numerical integration  |  centre = posterior mean",
-    x        = expression(r ~ "(loop radius, posterior SD units)"),
-    y        = expression(H[j] ~ "(holonomy per group)")
+    x = NULL,
+    y = expression(H[j] ~ "(linearised)")
   ) +
   theme_minimal(base_size = 12) +
-  theme(legend.position = "right")
+  theme(
+    legend.position  = "right",
+    axis.text.x      = element_blank(),
+    axis.ticks.x     = element_blank()
+  )
+
+# ── Bottom panel: residuals (numerical - Stokes) vs radius ────────────────────
+p_resid <- ggplot(df_curve, aes(x = radius, colour = group)) +
+  geom_vline(xintercept = 0.20, linetype = "dashed", colour = "grey70") +
+  geom_hline(yintercept = 0,    linetype = "dotted", colour = "grey50") +
+  geom_line(aes(y = residual),  linewidth = 0.7) +
+  geom_point(aes(y = residual), size = 1.8, shape = 16) +
+  annotate("text", x = 0.20, y = Inf, label = "r = 0.20",
+           hjust = -0.1, vjust = 1.5, size = 3.2, colour = "grey50") +
+  col_scale +
+  labs(
+    x = expression(r ~ "(loop radius, posterior SD units)"),
+    y = "Numerical - Stokes"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "none")
+
+# ── Combine ───────────────────────────────────────────────────────────────────
+p_combined <- p_top / p_resid + plot_layout(heights = c(2, 1))
 
 ggsave(file.path(out_dir, "holonomy_vs_radius.png"),
-       plot = p_curve, width = 7, height = 5, dpi = 150)
+       plot = p_combined, width = 7, height = 7, dpi = 150)
 cat("Saved: data-raw/holonomy_vs_radius.png\n")
 
 cat(sprintf(

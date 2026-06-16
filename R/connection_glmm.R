@@ -67,25 +67,38 @@
   -G_BF / G_FF_diag   # broadcasts column-wise: each row of G_BF / scalar G_FF[j]
 }
 
-# ── Curvature ─────────────────────────────────────────────────────────────────
+# ── Linearised curvature ──────────────────────────────────────────────────────
 
-#' Analytic curvature of the GLMM connection
+#' Linearised curvature of the GLMM connection
 #'
-#' For the 2D base (mu, sigma), the curvature collapses to a J-vector:
+#' Computes the base-derivative part of the Ehresmann curvature 2-form, with
+#' the fiber coordinate \eqn{\alpha} (equivalently \eqn{G_{FF}}) held fixed:
 #'
-#'   F\[j\] = d_mu A\[j,sigma\] - d_sigma A\[j,mu\]
-#'        = -2 / (sigma^5 * G_FF\[j\]^2)
+#'   \deqn{F_j^{\text{lin}} = \partial_\mu A_{j,\sigma} - \partial_\sigma A_{j,\mu}
+#'         = -2 / (\sigma^5 G_{FF,j}^2)}
 #'
-#' F\[j\] < 0 for all j: the connection is contractive (not rotational) for
-#' this model.  |F\[j\]| grows as the prior dominates (small data, large sigma).
+#' **This is NOT the full Ehresmann curvature.**  The full curvature of
+#' \eqn{A = -G_{FF}^{-1}G_{BF}} is identically zero for this model class:
+#' the fiber-derivative (vertical) terms \eqn{A_\mu \partial_\alpha A_\sigma -
+#' A_\sigma \partial_\alpha A_\mu = +2/(\sigma^5 G_{FF}^2)} cancel the base
+#' terms exactly, so the connection is flat (see Proposition `prop:flat` in the
+#' companion paper and `data-raw/verify_flat_connection.R`).
 #'
-#' @param G_FF_diag J-vector.
-#' @param sigma     Scalar.
-#' @return J-vector.
+#' This function returns the linearised quantity because that is what
+#' [synthetic_holonomy_loop()] integrates (the fiber is frozen at the loop
+#' centre), and it equals \eqn{2\pi_j^2/\sigma} in absolute value, making
+#' it useful as a proxy for where the prior fraction \eqn{\pi_j} is large.
+#'
+#' @param G_FF_diag J-vector returned by [.glmm_G_FF()].
+#' @param sigma     Scalar; group-level SD.
+#' @return J-vector.  All values are negative (\eqn{F_j < 0}).
 #' @keywords internal
-.glmm_curvature <- function(G_FF_diag, sigma) {
+.glmm_curvature_linearised <- function(G_FF_diag, sigma) {
   -2 / (sigma^5 * G_FF_diag^2)
 }
+
+# Back-compat alias — prefer .glmm_curvature_linearised in new code.
+.glmm_curvature <- .glmm_curvature_linearised
 
 # ── Prior-vs-likelihood information decomposition ─────────────────────────────
 

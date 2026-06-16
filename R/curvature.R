@@ -96,7 +96,7 @@ integrate_transport <- function(connection,
       A_t     <- .glmm_connection(G_FF_t, G_BF_t)   # J x 2
 
       delta_alpha[t, ] <- A_t %*% dtheta
-      F_along[t, ]     <- .glmm_curvature(G_FF_t, sig_t)
+      F_along[t, ]     <- .glmm_curvature_linearised(G_FF_t, sig_t)
     }
 
     alpha_trans_mat[k, ] <- alp_i + colSums(delta_alpha)
@@ -417,13 +417,22 @@ plot.fibr_transport <- function(x, type = c("scatter", "trajectory"), loop_idx =
   }
 }
 
-#' Holonomy along a synthetic circular loop in base space
+#' Linearised holonomy along a synthetic circular loop in base space
 #'
 #' @description
-#' Constructs a circular path in \eqn{(\mu, \sigma)} space, integrates the
-#' analytic connection form along it, and compares the result with the Stokes
-#' approximation \eqn{H_j \approx \exp(F_j \cdot \pi r^2)}.  This is the
-#' clean theoretical validation that bypasses the MCMC loop-area problem.
+#' Constructs a circular path in \eqn{(\mu, \sigma)} space and integrates the
+#' **linearised** connection form along it (fiber \eqn{\bm{\alpha}} held fixed
+#' at `alpha0`, equivalently \eqn{G_{FF}} frozen at the loop centre).  The
+#' result is compared with the first-order Stokes approximation
+#' \eqn{H_j = 1 + F_j^{\text{lin}} \cdot \pi r^2 / \alpha_{0j}}.
+#'
+#' **This function does not integrate the true (full) Ehresmann connection.**
+#' The true connection is flat (full curvature identically zero;
+#' see `data-raw/verify_flat_connection.R`), so its holonomy over any loop is
+#' trivial.  What this function computes is the holonomy of the
+#' *fiber-frozen* linearisation, which is the object validated in Figure 3
+#' of the companion paper and whose curvature is
+#' \eqn{F_j^{\text{lin}} = -2/(\sigma^5 G_{FF,j}^2)}.
 #'
 #' @param connection A `fibr_connection` object.
 #' @param mu0,sigma0 Centre of the circle in base space.  Defaults to the
@@ -512,7 +521,7 @@ synthetic_holonomy_loop <- function(connection,
   G_FF_c  <- .glmm_G_FF(sigma0, alpha0, sd_obj$X, sd_obj$group, beta0)
   G_BF_c  <- .glmm_G_BF(sigma0, mu0,   alpha0)
   A_c     <- .glmm_connection(G_FF_c, G_BF_c)
-  F_c     <- .glmm_curvature(G_FF_c, sigma0)
+  F_c     <- .glmm_curvature_linearised(G_FF_c, sigma0)
 
   area_circle  <- pi * radius^2
   H_stokes     <- 1 + F_c * area_circle / denom

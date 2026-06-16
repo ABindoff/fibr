@@ -46,10 +46,10 @@ where
       \!\!\!\left(\frac{\partial\mu_i}{\partial\omega_{k,i}}\right)^{\!2}}
 
 \itemize{
-\item \code{prior_frac} \eqn{\to 1}: prior dominates — group changepoints are
+\item \code{prior_frac} \eqn{\to 1}: prior dominates -- group changepoints are
 poorly identified from data relative to the shrinkage prior.  The sampler
 is in the funnel regime and non-centred reparameterisation would help.
-\item \code{prior_frac} \eqn{\to 0}: likelihood dominates — centred
+\item \code{prior_frac} \eqn{\to 0}: likelihood dominates -- centred
 parameterisation is efficient and mixing should be adequate.
 \item Mixed: flag individual groups for attention.
 }
@@ -65,19 +65,19 @@ fit_nc_ss <- smoothbp_ss(..., reparameterise = "omega")
 This activates the non-centred HMC parameterisation in the Rust sampler:
 \code{z[j] = beta_om[j] / sigma_re_om[k]} is sampled with an \code{N(0,1)} prior,
 and \code{beta_om[j] = z[j] * sigma_re_om[k]} is reconstructed automatically.
-The \code{sigma_re_om} Gibbs step and the stored draws are unchanged — output
+The \code{sigma_re_om} Gibbs step and the stored draws are unchanged -- output
 is in the original (centred) parameterisation for easy interpretation.
 
 Additional options if \code{reparameterise = "omega"} is insufficient:
 \enumerate{
 \item Increase \code{warmup} and \code{iter}.
-\item Check \code{fit$n_divergent} — many divergences confirm a remaining funnel.
+\item Check \code{fit$n_divergent} -- many divergences confirm a remaining funnel.
 \item Fix the changepoint for poorly-identified groups using
 \code{omega = list(fixed(value))}.
 }
 
 The \code{prior_frac} values quantify the severity: values above 0.8 indicate a
-serious funnel; 0.6–0.8 suggests moderate difficulty worth addressing.
+serious funnel; 0.6-0.8 suggests moderate difficulty worth addressing.
 
 The gradient is computed analytically from the sigmoid smooth-transition
 likelihood:

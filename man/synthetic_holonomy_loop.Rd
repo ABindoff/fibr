@@ -2,7 +2,7 @@
 % Please edit documentation in R/curvature.R
 \name{synthetic_holonomy_loop}
 \alias{synthetic_holonomy_loop}
-\title{Holonomy along a synthetic circular loop in base space}
+\title{Linearised holonomy along a synthetic circular loop in base space}
 \usage{
 synthetic_holonomy_loop(
   connection,
@@ -43,8 +43,17 @@ A data frame with one row per group j and columns:
 }
 }
 \description{
-Constructs a circular path in \eqn{(\mu, \sigma)} space, integrates the
-analytic connection form along it, and compares the result with the Stokes
-approximation \eqn{H_j \approx \exp(F_j \cdot \pi r^2)}.  This is the
-clean theoretical validation that bypasses the MCMC loop-area problem.
+Constructs a circular path in \eqn{(\mu, \sigma)} space and integrates the
+\strong{linearised} connection form along it (fiber \eqn{\bm{\alpha}} held fixed
+at \code{alpha0}, equivalently \eqn{G_{FF}} frozen at the loop centre).  The
+result is compared with the first-order Stokes approximation
+\eqn{H_j = 1 + F_j^{\text{lin}} \cdot \pi r^2 / \alpha_{0j}}.
+
+\strong{This function does not integrate the true (full) Ehresmann connection.}
+The true connection is flat (full curvature identically zero;
+see \code{data-raw/verify_flat_connection.R}), so its holonomy over any loop is
+trivial.  What this function computes is the holonomy of the
+\emph{fiber-frozen} linearisation, which is the object validated in Figure 3
+of the companion paper and whose curvature is
+\eqn{F_j^{\text{lin}} = -2/(\sigma^5 G_{FF,j}^2)}.
 }

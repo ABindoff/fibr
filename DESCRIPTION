@@ -1,18 +1,25 @@
 Package: fibr
 Type: Package
-Title: Holonomy Diagnostics for Hierarchical MCMC
+Title: Prior-Fraction Diagnostics and Geometry-Guided Reparameterisation for
+    Hierarchical MCMC
 Version: 0.1.0
 Authors@R:
     person("Aidan D", "Bindoff",
            email   = "aidan.bindoff@utas.edu.au",
            role    = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-0943-2702"))
-Description: Detects non-trivial holonomy in Markov chain Monte Carlo chains
-    from hierarchical models by exploiting the fiber bundle structure of the
-    joint parameter space. The Fisher information metric on the total space
-    induces a connection whose curvature produces a rotation of local
-    (fiber) parameters when global (base space) hyperparameters traverse closed
-    loops. This geometric obstruction to mixing is invisible to standard
+Description: Tools for diagnosing and remedying the centring/non-centring
+    obstruction in hierarchical Markov chain Monte Carlo, built on the fiber
+    bundle structure of the joint parameter space. The Fisher information
+    metric induces an Ehresmann connection on the base-fiber split; for the
+    centred logistic GLMM this connection is flat, so the obstruction is not
+    geometric holonomy but conditional dependence between base and fiber,
+    governed per group by the prior fraction (the classical shrinkage or
+    pooling factor). The package computes the analytic connection and prior
+    fraction, estimates per-group loop-conditional dependence from a posterior
+    chain, and supports per-group partial non-centring and connection-corrected
+    proposals. The apparent 'holonomy' seen when the fiber is held fixed is a
+    linearisation artifact. These pathologies are invisible to standard
     diagnostics such as R-hat, effective sample size, and divergence counts.
 License: MIT + file LICENSE
 URL: https://github.com/ABindoff/fibr, https://doi.org/10.5281/zenodo.20687656
@@ -29,6 +36,7 @@ Imports:
     ggplot2,
     FNN
 Suggests:
+    brms,
     cmdstanr,
     deSolve,
     patchwork,

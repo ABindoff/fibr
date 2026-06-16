@@ -132,6 +132,68 @@ test_that("compute_connection returns fibr_connection with correct dims", {
   expect_equal(ncol(conn$G_FF),       J)
   expect_equal(dim(conn$curvature),   c(20L, J))
   expect_true(all(conn$G_FF > 0))
-  expect_true(all(conn$curvature < 0))   # curvature always negative for GLMM
+  expect_true(all(conn$curvature < 0))   # linearised curvature always negative for GLMM
   expect_true(all(conn$prior_frac > 0 & conn$prior_frac < 1))
+})
+
+# ── Flatness: true connection has zero holonomy ───────────────────────────────
+#
+# These tests port the RK4 ODE from data-raw/verify_flat_connection.R.
+# Single-group logistic model (n=3, random intercept only):
+#   p_i = plogis(alpha + x_i),  alpha ~ N(mu, sigma^2)
+#   G_FF(a,s) = 1/s^2 + sum_i p_i(1-p_i)
+#   A_mu(a,s)  =  1 / (s^2 G_FF)        [frozen: same with G_0]
+#   A_sig(a,s) =  2(a-mu) / (s^3 G_FF)  [frozen: same with G_0]
+# RK4 integrates dalpha/dt = A_mu*dmu/dt + A_sig*dsig/dt around a circle
+# of radius r in (mu,sigma) space.
+
+local({
+  set.seed(1L)
+  n <- 3L; xb <- rnorm(n, 0, 1)
+
+  S     <- function(a)     { p <- plogis(a + xb); sum(p * (1 - p)) }
+  G_FF  <- function(a, s)  1 / s^2 + S(a)
+  A_mu  <- function(a, s)  1 / (s^2 * G_FF(a, s))
+  A_sig <- function(a, mu, s) 2 * (a - mu) / (s^3 * G_FF(a, s))
+
+  holonomy <- function(mu0, sigma0, alpha0, r, frozen, nsteps = 20000L) {
+    G0 <- G_FF(alpha0, sigma0)
+    f  <- function(tk, ak) {
+      m  <- mu0    + r * cos(tk)
+      s  <- sigma0 + r * sin(tk)
+      dm <- -r * sin(tk)
+      ds <-  r * cos(tk)
+      if (frozen) {
+        am  <- 1 / (s^2 * G0)
+        asg <- 2 * (ak - m) / (s^3 * G0)
+      } else {
+        am  <- A_mu(ak, s)
+        asg <- A_sig(ak, m, s)
+      }
+      am * dm + asg * ds
+    }
+    th <- seq(0, 2 * pi, length.out = nsteps + 1L)
+    a  <- alpha0
+    for (k in seq_len(nsteps)) {
+      dt <- th[k + 1L] - th[k]; t <- th[k]
+      k1 <- f(t,          a)
+      k2 <- f(t + dt / 2, a + dt / 2 * k1)
+      k3 <- f(t + dt / 2, a + dt / 2 * k2)
+      k4 <- f(t + dt,     a + dt * k3)
+      a  <- a + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+    }
+    a - alpha0
+  }
+
+  test_that("linearised (frozen-G) holonomy is nonzero at r=0.1", {
+    hol <- holonomy(mu0 = 0, sigma0 = 1.0, alpha0 = 0.0, r = 0.1,
+                    frozen = TRUE)
+    expect_gt(abs(hol), 0.01)
+  })
+
+  test_that("full connection is flat: true holonomy < 1e-8 at r=0.1", {
+    hol <- holonomy(mu0 = 0, sigma0 = 1.0, alpha0 = 0.0, r = 0.1,
+                    frozen = FALSE)
+    expect_lt(abs(hol), 1e-8)
+  })
 })

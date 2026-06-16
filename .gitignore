@@ -38,3 +38,27 @@ FIBR_BRIEFING.md
 
 # Large simulation output caches
 data-raw/simstud_draws/
+
+# R CMD check output
+fibr.Rcheck/
+
+# LaTeX artefacts
+fibr_paper.aux
+fibr_paper.log
+fibr_paper.out
+fibr_paper.pdf
+fibr_paper.toc
+
+# Personal notes and planning docs
+NOTES_*.md
+PUBLICATION_ROADMAP.md
+
+# AI tool output
+repomix-output*.xml
+
+# Generated outputs in data-raw (scripts are committed; outputs are not)
+data-raw/*.py
+data-raw/*.log
+data-raw/*.tex
+data-raw/*.csv
+data-raw/*.json

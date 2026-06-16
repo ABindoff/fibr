@@ -115,7 +115,7 @@ compute_connection <- function(chain,
     G_FF_mat[t, ]   <- G_FF_t
     G_BF_arr[t, , ] <- G_BF_t
     A_arr[t, , ]    <- A_t
-    curv_mat[t, ]   <- .glmm_curvature(G_FF_t, sig_t)
+    curv_mat[t, ]   <- .glmm_curvature_linearised(G_FF_t, sig_t)
     pf_mat[t, ]     <- .glmm_prior_fraction(G_FF_t, sig_t)
   }
 

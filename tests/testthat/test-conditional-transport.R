@@ -115,7 +115,7 @@ test_that("Package functions A^sigma/ratio -> 2 at large |alpha| (s_j -> 0)", {
 
   G_j <- .glmm_G_FF(sigma, alpha_ext, tiny_z$X, tiny_z$group, beta)
   A   <- .glmm_connection(G_j, .glmm_G_BF(sigma, mu, alpha_ext))
-  F_j <- .glmm_curvature(G_j, sigma)
+  F_j <- .glmm_curvature_linearised(G_j, sigma)
 
   ratio <- A[, 2L] / ((alpha_ext - mu) / sigma)
   expect_equal(ratio, rep(2, 4L), tolerance = 1e-4)

@@ -5,3 +5,13 @@
 ^\.repro$
 ^inst/stan/.*\.exe$
 ^inst/stan/.*\.hpp$
+^fibr\.Rcheck$
+^fibr_paper\..*
+^repomix-output.*$
+^NOTES_.*\.md$
+^PUBLICATION_ROADMAP\.md$
+^data-raw/.*\.log$
+^data-raw/.*\.py$
+^data-raw/.*\.tex$
+^data-raw/.*\.csv$
+^data-raw/.*\.json$
