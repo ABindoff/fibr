@@ -17,31 +17,29 @@
            fill="none" stroke="#D8C0E8" stroke-width="3" opacity="0.85"/>
 
   <!-- 'f' as ∮
-       The stroke starts at the LEFT terminal, sweeps LEFT-UP-RIGHT-DOWN —
-       the standard 'f' gesture. This is opposite to '3' (which has both
-       bumps starting from the right). The ∮ circle sits at crossbar height
-       with the spine passing through its centre. Small leftward base curl
-       completes the ∫ character. -->
-  <path d="M 163,326
-           C 158,296 175,271 198,269
-           C 221,267 225,296 219,322
-           C 218,342 210,370 207,393
-           C 203,419 195,449 189,469
-           C 186,482 185,491 196,488"
+       Terminal at UPPER-RIGHT, arc sweeps LEFT through the peak, then drops
+       into the LEFT-SIDE stem — standard sans-serif 'f': stem left, hook right.
+       Previously the stem was on the right (mirrored); this corrects it. -->
+  <path d="M 220,295
+           C 232,278 228,260 210,262
+           C 192,264 180,286 178,328
+           C 178,350 177,370 177,390
+           C 176,414 174,446 173,466
+           C 171,480 170,490 180,487"
         fill="none" stroke="#C84878" stroke-width="11"
         stroke-linecap="round" stroke-linejoin="round"/>
 
-  <!-- ∮ contour: circle centered on the downstroke -->
-  <circle cx="205" cy="393" r="37"
+  <!-- ∮ contour: centred on the left-side stem -->
+  <circle cx="177" cy="390" r="34"
           fill="none" stroke="#C84878" stroke-width="8.5"/>
 
-  <!-- Fibre vector: horizontal lift exiting the loop upper-right -->
-  <line x1="231" y1="366" x2="283" y2="314"
+  <!-- Fibre vector: horizontal lift out of the loop -->
+  <line x1="201" y1="366" x2="255" y2="311"
         stroke="#38B8B0" stroke-width="6.5" stroke-linecap="round"
         marker-end="url(#tip)"/>
 
   <!-- "ibr" -->
-  <text x="252" y="472"
+  <text x="242" y="472"
         font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif"
         font-weight="800" font-size="140" fill="#3C2870"
         letter-spacing="-2">ibr</text>
