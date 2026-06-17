@@ -16,7 +16,7 @@ for each group-level coordinate: the share of that coordinate's posterior precis
 
 Coordinates with π_j near 1 are prior-dominated: their posteriors reflect regularisation toward the population mean rather than group-specific data. Coordinates with π_j near 0 are data-driven. The same quantity gives the per-group non-centring weight for partial reparameterisation.
 
-The installed package is deliberately small: `prior_fraction()` (with a `brms` method) and the `smoothbp_advisor()` companion. The geometry that motivates it — the analytic connection, curvature, the chain-level coupling diagnostic, and the experimental connection-corrected samplers — is reproduction code for the paper and lives in the source repository's [`paper/`](paper/) directory rather than in the installed package, because the paper proves this connection is flat (so those quantities are statistical, not a user-facing geometric diagnostic).
+The installed package is deliberately small: `prior_fraction()` (with a `brms` method) and the `smoothbp_advisor()` companion. The geometry that motivates it — the analytic connection, curvature, the chain-level coupling diagnostic, and the experimental connection-corrected samplers — is reproduction code for the paper and lives in the source repository's [`paper/`](https://github.com/ABindoff/fibr/tree/master/paper) directory rather than in the installed package, because the paper proves this connection is flat (so those quantities are statistical, not a user-facing geometric diagnostic).
 
 ## Installation
 
@@ -68,7 +68,7 @@ This path works for Stan, JAGS, or any other fitting engine. The helper `fibr:::
 
 The analytic connection, curvature, chain-level coupling diagnostic, and the
 connection-corrected samplers are not part of the installed package. They live in
-[`paper/R/`](paper/R) and are loaded with:
+[`paper/R/`](https://github.com/ABindoff/fibr/tree/master/paper/R) and are loaded with:
 
 ```r
 source("paper/setup.R")   # run from the repository root
@@ -76,7 +76,7 @@ source("paper/setup.R")   # run from the repository root
 
 after which `compute_connection()`, `holonomy_diagnostic()`, and the samplers are
 available, and the scripts in `data-raw/` regenerate the paper's figures. See
-[`paper/README.md`](paper/README.md). This route needs the heavier dependencies
+[`paper/README.md`](https://github.com/ABindoff/fibr/blob/master/paper/README.md). This route needs the heavier dependencies
 (Matrix, FNN, deSolve, patchwork, a Stan backend) that the CRAN package does not.
 
 ## Background
@@ -89,7 +89,7 @@ What remains is statistical: the conditional dependence of fiber on base, govern
 
 ## Reference
 
-Bindoff, A.D. (2026). *A Flat Connection: The Prior Fraction and the Geometry of Centring in Hierarchical MCMC.* Preprint. <https://doi.org/10.5281/zenodo.20687656>
+Bindoff, A.D. (2026). *A Flat Connection: The Prior Fraction and the Geometry of Centring in Hierarchical MCMC.* Preprint. <https://doi.org/10.5281/zenodo.20724550>
 
 ```bibtex
 @misc{bindoff2026fibr,
@@ -97,7 +97,7 @@ Bindoff, A.D. (2026). *A Flat Connection: The Prior Fraction and the Geometry of
   title  = {A Flat Connection: The Prior Fraction and the Geometry of
              Centring in Hierarchical {MCMC}},
   year   = {2026},
-  doi    = {10.5281/zenodo.20687656},
+  doi    = {10.5281/zenodo.20724550},
   url    = {https://github.com/ABindoff/fibr}
 }
 ```
