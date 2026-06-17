@@ -1,3 +1,7 @@
+# fibr 0.1.1
+
+- Update Zenodo DOI to `10.5281/zenodo.20724550` (version 0.1.1 archive).
+
 # fibr 0.1.0
 
 Initial CRAN release.

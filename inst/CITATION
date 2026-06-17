@@ -5,7 +5,7 @@ bibentry(
                     email   = "aidan.bindoff@utas.edu.au",
                     comment = c(ORCID = "0000-0002-0943-2702")),
   year     = "2026",
-  doi      = "10.5281/zenodo.20687656",
-  url      = "https://doi.org/10.5281/zenodo.20687656",
-  note     = "fibr R package version 0.1.0"
+  doi      = "10.5281/zenodo.20724550",
+  url      = "https://doi.org/10.5281/zenodo.20724550",
+  note     = "fibr R package version 0.1.1"
 )

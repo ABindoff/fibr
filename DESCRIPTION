@@ -1,7 +1,7 @@
 Package: fibr
 Type: Package
 Title: Prior-Fraction Diagnostics for Hierarchical Models
-Version: 0.1.0
+Version: 0.1.1
 Authors@R:
     person("Aidan D", "Bindoff",
            email   = "aidan.bindoff@utas.edu.au",
@@ -23,7 +23,7 @@ Description: Computes the prior fraction, the per-group pooling or shrinkage
     than geometric) is described in the accompanying paper; code reproducing the
     paper is in the package's source repository.
 License: MIT + file LICENSE
-URL: https://github.com/ABindoff/fibr, https://doi.org/10.5281/zenodo.20687656
+URL: https://github.com/ABindoff/fibr, https://doi.org/10.5281/zenodo.20724550
 BugReports: https://github.com/ABindoff/fibr/issues
 Encoding: UTF-8
 LazyData: false
