@@ -2,8 +2,8 @@
 
 Scripts and instructions to regenerate every figure and table in:
 
-> Bindoff, A. D. (2026). *The Footprint of the Connection: Fiber Bundle
-> Geometry and Conditional Autocorrelation in Hierarchical MCMC*.
+> Bindoff, A. D. (2026). *A Flat Connection: The Prior Fraction and the
+> Geometry of Centring in Hierarchical MCMC*.
 > arXiv preprint.
 
 All scripts are under `data-raw/` and are run from the **package root**
@@ -20,22 +20,30 @@ All scripts are under `data-raw/` and are run from the **package root**
 | cmdstanr | 0.9.0.9000 |
 | CmdStan | 2.38.0 |
 | ggplot2 | see `sessionInfo()` |
-| fibr | 0.1.0 |
+| fibr | 0.1.1 |
 
 ---
 
 ## Run order
 
-### Step 0 — Install the package and compile Stan models
+### Step 0 — Clone the repo, install the package, load paper apparatus
+
+All scripts run from the **repository root** (`fibr/`). The CRAN package
+provides only `prior_fraction()` and `smoothbp_advisor()`; the geometry and
+sampler functions used in the figures live in `paper/R/` and must be loaded
+separately.
 
 ```r
-# Install from source (or from GitHub release / Zenodo archive):
-# install.packages("fibr_0.1.0.tar.gz", repos = NULL, type = "source")
-# or:
-# remotes::install_github("ABindoff/fibr@v0.1.0")
+# 1. Install fibr from CRAN (or from the Zenodo archive / GitHub release):
+install.packages("fibr")
+# or: remotes::install_github("ABindoff/fibr@v0.1.1")
 
+# 2. Load the paper apparatus (geometry, samplers, diagnostics):
+source("paper/setup.R")   # defines compute_connection(), holonomy_diagnostic(), ...
+library(fibr)             # defines prior_fraction()
+
+# 3. Compile the four Stan models (one-time; ~30 s each):
 library(cmdstanr)
-# Compile the four Stan models (one-time; ~30 s each):
 cmdstan_model("inst/stan/glmm_centred.stan")
 cmdstan_model("inst/stan/glmm_noncentred.stan")
 cmdstan_model("inst/stan/glmm_hconnected.stan")
