@@ -89,12 +89,12 @@ What remains is statistical: the conditional dependence of fiber on base, govern
 
 ## Reference
 
-Bindoff, A.D. (2026). *A Flat Connection: The Prior Fraction and the Geometry of Centring in Hierarchical MCMC.* Preprint. <https://doi.org/10.5281/zenodo.20724550>
+Bindoff, A.D. (2026). *A Flat Connection: The Pooling Factor and the Geometry of Centring in Hierarchical MCMC.* Preprint. <https://doi.org/10.5281/zenodo.20724550>
 
 ```bibtex
 @misc{bindoff2026fibr,
   author = {Bindoff, Aidan D.},
-  title  = {A Flat Connection: The Prior Fraction and the Geometry of
+  title  = {A Flat Connection: The Pooling Factor and the Geometry of
              Centring in Hierarchical {MCMC}},
   year   = {2026},
   doi    = {10.5281/zenodo.20724550},
