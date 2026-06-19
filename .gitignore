@@ -30,6 +30,7 @@ vignettes/*.md
 # manuscript drafts
 manuscript/
 manuscript2/
+manuscript_bayesian_analysis/
 
 # Handoff/planning documents
 HANDOFF*.md
