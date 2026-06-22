@@ -20,3 +20,6 @@
 ^manuscript$
 ^manuscript2$
 ^data-raw/.*\.json$
+^CRAN-SUBMISSION$
+^fibr_arxiv_submission\.zip$
+^manuscript_bayesian_analysis$

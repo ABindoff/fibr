@@ -20,8 +20,9 @@ Description: Computes the prior fraction, the per-group pooling or shrinkage
     decomposition for changepoint random effects fitted with 'smoothbp'. The
     underlying geometry (the Fisher-metric connection on the base-fiber split,
     for which this connection is flat so the obstruction is statistical rather
-    than geometric) is described in the accompanying paper; code reproducing the
-    paper is in the package's source repository.
+    than geometric) is described in Bindoff (2026)
+    <doi:10.5281/zenodo.20724550>; code reproducing the paper is in the
+    package's source repository.
 License: MIT + file LICENSE
 URL: https://github.com/ABindoff/fibr, https://doi.org/10.5281/zenodo.20724550
 BugReports: https://github.com/ABindoff/fibr/issues
@@ -39,4 +40,7 @@ Suggests:
     smoothbp,
     cmdstanr,
     testthat (>= 3.0.0)
+Additional_repositories: https://stan-dev.r-universe.dev
 Config/testthat/edition: 3
+Config/rextendr/version: 0.5.0
+SystemRequirements: Cargo (Rust's package manager), rustc >= 1.65.0, xz

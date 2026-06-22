@@ -81,13 +81,18 @@ sigma <- 1.5
 lik   <- c(0.2, 1.0, 5.0)          # e.g. sum p(1-p) for three groups
 prior_fraction(1 / sigma^2, lik_information = lik)
 
-\dontrun{
+\donttest{
 ## brms path: which group-level estimates are prior-dominated?
-library(brms)
-fit <- brm(count ~ 1 + (1 | site), data = my_data, family = poisson())
-pf  <- prior_fraction(fit)
-pf                                  # summary: how many coordinates have pi > 0.8
-plot(pf)                            # pi vs. number of observations
+if (requireNamespace("brms", quietly = TRUE)) {
+  set.seed(42)
+  dat <- data.frame(y = rpois(30, 5), site = rep(letters[1:10], 3))
+  fit <- brms::brm(y ~ 1 + (1 | site), data = dat,
+                   family = stats::poisson(), iter = 500, chains = 1,
+                   refresh = 0)
+  pf <- prior_fraction(fit)
+  pf                                # summary: how many coordinates have pi > 0.8
+  plot(pf)                          # pi vs. number of observations
+}
 }
 
 }
