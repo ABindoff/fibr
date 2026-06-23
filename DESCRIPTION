@@ -7,11 +7,12 @@ Authors@R:
            email   = "aidan.bindoff@utas.edu.au",
            role    = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-0943-2702"))
-Description: Computes the prior fraction, the per-group pooling or shrinkage
-    factor, for hierarchical models, including directly from 'brms' fits. For
-    each group-level coefficient the prior fraction is the share of the
-    posterior precision contributed by the shrinkage prior relative to the
-    likelihood; values near one indicate a coefficient that is prior-dominated
+Description: Computes the prior fraction, the per-group pooling factor of
+    Gelman and Pardoe (2006) <doi:10.1198/004017005000000517>, for hierarchical
+    models, including directly from 'brms' fits. For each group-level
+    coefficient the prior fraction is the share of the posterior precision
+    contributed by the prior relative to the likelihood; values near one
+    indicate a coefficient that is prior-dominated
     (the centring/non-centring funnel regime), values near zero indicate a
     likelihood-dominated coefficient that is well identified from the data.
     These quantities are invisible to standard convergence diagnostics such as

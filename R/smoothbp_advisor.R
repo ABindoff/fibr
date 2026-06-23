@@ -63,6 +63,12 @@ utils::globalVariables(c("label", "rec", "q05", "q95"))
 #' where \eqn{d_{ki} = \tau_i - \omega_{k,i}} and
 #' \eqn{\sigma_{ki} = \text{logistic}(d_{ki}\,\rho_{ki})}.
 #'
+#' @references
+#' Gelman and Pardoe (2006), \emph{Technometrics} 48(2):241--251 (the pooling
+#' factor). Papaspiliopoulos, Roberts and Skold (2003), \emph{Bayesian
+#' Statistics 7}; Tan and Nott (2013), \emph{Statistical Science}
+#' 28(2):168--188 (the closed-form partial non-centring weight \eqn{\delta_j}).
+#'
 #' @param fit        A `smoothbp_fit` from `smoothbp::smoothbp()` or
 #'   `smoothbp::smoothbp_ss()`, with at least one omega random effect
 #'   (`omega = list(~ 1 + (1 | group))`).

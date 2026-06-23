@@ -1,4 +1,4 @@
-#' Per-coordinate prior fraction (shrinkage / pooling factor)
+#' Per-coordinate prior fraction (the Gelman-Pardoe pooling factor)
 #'
 #' @description
 #' For each group-level (random-effect) coordinate \eqn{\alpha_j} of a fitted
@@ -6,9 +6,10 @@
 #' \deqn{\pi_j = \frac{\text{prior precision}}{\text{prior precision} +
 #'   \text{likelihood information}} = \frac{1/\sigma^2}{G_{FF,j}}}
 #' is the share of that coordinate's posterior precision contributed by the
-#' prior rather than by its own data. It is the classical shrinkage / pooling
-#' factor (Gelman and Pardoe, 2006) and the per-group information ratio of
-#' Betancourt and Girolami (2015).
+#' prior rather than by its own data. It is the pooling factor of Gelman and
+#' Pardoe (2006); its complement \eqn{1-\pi_j} is the shrinkage factor. The
+#' prior/likelihood balance it captures is the one Betancourt and Girolami
+#' (2015) tied to the optimal centred/non-centred parameterisation.
 #'
 #' \strong{Interpretation.} \eqn{\pi_j \approx 1} means the coordinate is
 #' \emph{prior-dominated}: its posterior is essentially the prior pushed through

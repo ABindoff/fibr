@@ -8,8 +8,8 @@ Initial CRAN release.
 
 ## New features
 
-- `prior_fraction()` computes the per-group prior fraction (pooling or
-  shrinkage factor) for hierarchical models. Accepts a `brmsfit` object
+- `prior_fraction()` computes the per-group prior fraction (the Gelman-Pardoe
+  pooling factor) for hierarchical models. Accepts a `brmsfit` object
   directly, or a manual path supplying prior precision and likelihood
   information for any other fitting engine (Stan, JAGS, etc.).
   Supports gaussian, bernoulli, binomial, poisson, and negbinomial families.

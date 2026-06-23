@@ -1,6 +1,6 @@
 bibentry(
   bibtype  = "Misc",
-  title    = "A Flat Connection: The Prior Fraction and the Geometry of Centring in Hierarchical MCMC",
+  title    = "A Flat Connection: The Pooling Factor and the Geometry of Centring in Hierarchical MCMC",
   author   = person("Aidan D.", "Bindoff",
                     email   = "aidan.bindoff@utas.edu.au",
                     comment = c(ORCID = "0000-0002-0943-2702")),
